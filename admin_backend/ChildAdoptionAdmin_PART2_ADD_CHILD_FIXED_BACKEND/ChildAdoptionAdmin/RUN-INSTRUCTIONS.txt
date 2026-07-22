@@ -1,0 +1,55 @@
+CHILD ADOPTION ADMIN API - RUN INSTRUCTIONS
+
+1. Copy the complete folder ChildAdoptionAdmin to your workspace.
+2. Open MySQL Workbench.
+3. Open and execute: database/database.sql
+4. Open: api/ChildAdoptionAdmin.Api/appsettings.json
+5. Replace the MySQL Password value with your own MySQL root password.
+6. Open PowerShell in: api/ChildAdoptionAdmin.Api
+7. Run:
+   dotnet restore
+   dotnet build
+   dotnet run
+8. Open:
+   http://localhost:5080/swagger
+
+LOGIN
+POST http://localhost:5080/api/auth/login
+Body:
+{
+  "email": "admin@cdac.org",
+  "password": "Admin@123"
+}
+
+For protected endpoints, copy the returned token, click Swagger Authorize,
+and paste only the token.
+
+PARENT REGISTRATION
+===================
+POST http://localhost:5080/api/auth/register
+
+Example body:
+{
+  "firstName": "Akash",
+  "lastName": "Battula",
+  "email": "akash@example.com",
+  "password": "Akash@123",
+  "phone": "9876543210",
+  "gender": "MALE",
+  "dob": "2002-01-15",
+  "aadhaarNumber": null,
+  "maritalStatus": "MARRIED",
+  "occupation": "Software Engineer",
+  "annualIncome": 600000,
+  "address": "Pune",
+  "city": "Pune",
+  "state": "Maharashtra",
+  "pincode": "411001"
+}
+
+Parent login:
+POST http://localhost:5080/api/auth/parent/login
+{
+  "email": "akash@example.com",
+  "password": "Akash@123"
+}
