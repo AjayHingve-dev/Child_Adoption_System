@@ -12,6 +12,7 @@ import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.backend.dto.UpdateUserDocumentRequestDto;
 import com.backend.dto.UserDocumentRequestDto;
 import com.backend.dto.UserDocumentResponseDto;
 import com.backend.entity.AdoptionRequest;
@@ -98,5 +99,90 @@ public class UserDocumentServiceImpl implements UserDocumentService {
             throw new RuntimeException("File upload failed.");
         }
 
+    }
+    
+    @Override
+    public void deleteDocument(Long documentId) {
+
+        UserDocument document = userDocumentRepository.findById(documentId)
+                .orElseThrow(() ->
+                        new RuntimeException("Document not found"));
+
+        if (document.getVerificationStatus() == VerificationStatus.VERIFIED) {
+            throw new RuntimeException(
+                    "Verified documents cannot be deleted.");
+        }
+
+        try {
+            Files.deleteIfExists(Paths.get(document.getFilePath()));
+        } catch (IOException e) {
+            throw new RuntimeException("Unable to delete file.");
+        }
+
+        userDocumentRepository.delete(document);
+    }
+
+    @Override
+    public UserDocumentResponseDto updateDocument(
+    		Long documentId,
+            UpdateUserDocumentRequestDto requestDto) {
+
+        MultipartFile file = requestDto.getFile();
+        String documentType = requestDto.getDocumentType();
+
+        UserDocument document = userDocumentRepository.findById(documentId)
+                .orElseThrow(() ->
+                        new RuntimeException("Document not found"));
+
+        if (document.getVerificationStatus() == VerificationStatus.VERIFIED) {
+            throw new RuntimeException(
+                    "Verified document cannot be updated.");
+        }
+
+        try {
+
+            Files.deleteIfExists(Paths.get(document.getFilePath()));
+
+            Files.createDirectories(Paths.get(UPLOAD_DIR));
+
+            String originalFileName = file.getOriginalFilename();
+
+            String newFileName =
+                    UUID.randomUUID() + "_" + originalFileName;
+
+            Path path = Paths.get(UPLOAD_DIR, newFileName);
+
+            Files.copy(
+                    file.getInputStream(),
+                    path,
+                    StandardCopyOption.REPLACE_EXISTING);
+
+            document.setDocumentType(documentType);
+            document.setFileName(newFileName);
+            document.setFilePath(path.toString());
+            document.setUploadedAt(LocalDateTime.now());
+            document.setVerificationStatus(VerificationStatus.PENDING);
+
+            UserDocument updated =
+                    userDocumentRepository.save(document);
+
+            UserDocumentResponseDto response =
+                    new UserDocumentResponseDto();
+
+            response.setDocumentId(updated.getDocumentId());
+            response.setUserId(updated.getUser().getUserId());
+            response.setRequestId(updated.getRequest().getRequestId());
+            response.setDocumentType(updated.getDocumentType());
+            response.setFileName(updated.getFileName());
+            response.setFilePath(updated.getFilePath());
+            response.setVerificationStatus(updated.getVerificationStatus());
+            response.setUploadedAt(updated.getUploadedAt());
+            response.setMessage("Document updated successfully.");
+
+            return response;
+
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to update document.", e);
+        }
     }
 }

@@ -6,6 +6,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.backend.dto.UpdateUserDocumentRequestDto;
 import com.backend.dto.UserDocumentRequestDto;
 import com.backend.dto.UserDocumentResponseDto;
 import com.backend.services.UserDocumentService;
@@ -42,4 +43,24 @@ public class UserDocumentController {
 
     	    return new ResponseEntity<>(response, HttpStatus.CREATED);
     	}
+    
+    @DeleteMapping("/{documentId}")
+    public ResponseEntity<String> deleteDocument(
+            @PathVariable Long documentId) {
+
+        userDocumentService.deleteDocument(documentId);
+
+        return ResponseEntity.ok("Document deleted successfully.");
+    }
+    
+    @PutMapping(value = "/{documentId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<UserDocumentResponseDto> updateDocument(
+            @PathVariable Long documentId,
+            @ModelAttribute UpdateUserDocumentRequestDto requestDto) {
+
+        UserDocumentResponseDto response =
+                userDocumentService.updateDocument(documentId, requestDto);
+
+        return ResponseEntity.ok(response);
+    }
 }
