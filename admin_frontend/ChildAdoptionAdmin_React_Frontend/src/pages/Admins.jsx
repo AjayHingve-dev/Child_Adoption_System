@@ -1,3 +1,164 @@
-import React,{useEffect,useState} from 'react';import {Plus} from 'lucide-react';import {api,errorMessage} from '../api';import {PageHeader,Card,Status,Loading,Empty,Modal,Button,Field,SelectField,Toast} from '../components/UI';
-const blank={firstName:'',lastName:'',email:'',password:'',phone:'',role:'ADMIN'};
-export default function Admins(){const [rows,setRows]=useState([]),[loading,setLoading]=useState(true),[open,setOpen]=useState(false),[form,setForm]=useState(blank),[toast,setToast]=useState(null);const load=()=>api.get('/admins').then(r=>setRows(r.data)).catch(e=>setToast({type:'error',message:errorMessage(e)})).finally(()=>setLoading(false));useEffect(load,[]);const save=async e=>{e.preventDefault();try{await api.post('/admins',form);setOpen(false);setForm(blank);setToast({message:'Administrator created'});load()}catch(e){setToast({type:'error',message:errorMessage(e)})}};return <><PageHeader title="Administrators" description="Control access to the administration portal." actions={<Button onClick={()=>setOpen(true)}><Plus/> Add admin</Button>}/><Card>{loading?<Loading/>:rows.length?<div className="table-wrap"><table><thead><tr><th>Administrator</th><th>Email</th><th>Phone</th><th>Role</th><th>Status</th><th>Created</th></tr></thead><tbody>{rows.map(r=><tr key={r.adminId}><td><div className="person"><div className="avatar">{r.firstName[0]}</div><b>{r.firstName} {r.lastName}</b></div></td><td>{r.email}</td><td>{r.phone||'—'}</td><td>{r.role}</td><td><Status value={r.status}/></td><td>{r.createdAt?.slice(0,10)}</td></tr>)}</tbody></table></div>:<Empty/>}</Card><Modal open={open} onClose={()=>setOpen(false)} title="Create administrator"><form onSubmit={save}><div className="form-grid"><Field label="First name" value={form.firstName} onChange={e=>setForm({...form,firstName:e.target.value})} required/><Field label="Last name" value={form.lastName} onChange={e=>setForm({...form,lastName:e.target.value})}/><Field label="Email" type="email" value={form.email} onChange={e=>setForm({...form,email:e.target.value})} required/><Field label="Password" type="password" value={form.password} onChange={e=>setForm({...form,password:e.target.value})} required/><Field label="Phone" value={form.phone} onChange={e=>setForm({...form,phone:e.target.value})}/><SelectField label="Role" value={form.role} onChange={e=>setForm({...form,role:e.target.value})}><option>ADMIN</option><option>SUPER_ADMIN</option></SelectField></div><div className="modal-actions"><Button variant="ghost" type="button" onClick={()=>setOpen(false)}>Cancel</Button><Button>Create</Button></div></form></Modal><Toast toast={toast} onClose={()=>setToast(null)}/></>}
+import React, { useEffect, useState } from "react";
+import { Plus } from "lucide-react";
+import { api, errorMessage } from "../api";
+import {
+  PageHeader,
+  Card,
+  Status,
+  Loading,
+  Empty,
+  Modal,
+  Button,
+  Field,
+  SelectField,
+  Toast,
+} from "../components/UI";
+const blank = {
+  firstName: "",
+  lastName: "",
+  email: "",
+  password: "",
+  phone: "",
+  role: "ADMIN",
+};
+export default function Admins() {
+  const [rows, setRows] = useState([]),
+    [loading, setLoading] = useState(true),
+    [open, setOpen] = useState(false),
+    [form, setForm] = useState(blank),
+    [toast, setToast] = useState(null);
+  const load = () =>
+    api
+      .get("/admins")
+      .then((r) => setRows(r.data))
+      .catch((e) => setToast({ type: "error", message: errorMessage(e) }))
+      .finally(() => setLoading(false));
+  useEffect(load, []);
+  const save = async (e) => {
+    e.preventDefault();
+    try {
+      await api.post("/admins", form);
+      setOpen(false);
+      setForm(blank);
+      setToast({ message: "Administrator created" });
+      load();
+    } catch (e) {
+      setToast({ type: "error", message: errorMessage(e) });
+    }
+  };
+  return (
+    <>
+      <PageHeader
+        title="Administrators"
+        description="Control access to the administration portal."
+        actions={
+          <Button onClick={() => setOpen(true)}>
+            <Plus /> Add admin
+          </Button>
+        }
+      />
+      <Card>
+        {loading ? (
+          <Loading />
+        ) : rows.length ? (
+          <div className="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Administrator</th>
+                  <th>Email</th>
+                  <th>Phone</th>
+                  <th>Role</th>
+                  <th>Status</th>
+                  <th>Created</th>
+                </tr>
+              </thead>
+              <tbody>
+                {rows.map((r) => (
+                  <tr key={r.adminId}>
+                    <td>
+                      <div className="person">
+                        <div className="avatar">{r.firstName[0]}</div>
+                        <b>
+                          {r.firstName} {r.lastName}
+                        </b>
+                      </div>
+                    </td>
+                    <td>{r.email}</td>
+                    <td>{r.phone || "—"}</td>
+                    <td>{r.role}</td>
+                    <td>
+                      <Status value={r.status} />
+                    </td>
+                    <td>{r.createdAt?.slice(0, 10)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <Empty />
+        )}
+      </Card>
+      <Modal
+        open={open}
+        onClose={() => setOpen(false)}
+        title="Create administrator"
+      >
+        <form onSubmit={save}>
+          <div className="form-grid">
+            <Field
+              label="First name"
+              value={form.firstName}
+              onChange={(e) => setForm({ ...form, firstName: e.target.value })}
+              required
+            />
+            <Field
+              label="Last name"
+              value={form.lastName}
+              onChange={(e) => setForm({ ...form, lastName: e.target.value })}
+            />
+            <Field
+              label="Email"
+              type="email"
+              value={form.email}
+              onChange={(e) => setForm({ ...form, email: e.target.value })}
+              required
+            />
+            <Field
+              label="Password"
+              type="password"
+              value={form.password}
+              onChange={(e) => setForm({ ...form, password: e.target.value })}
+              required
+            />
+            <Field
+              label="Phone"
+              value={form.phone}
+              onChange={(e) => setForm({ ...form, phone: e.target.value })}
+            />
+            <SelectField
+              label="Role"
+              value={form.role}
+              onChange={(e) => setForm({ ...form, role: e.target.value })}
+            >
+              <option>ADMIN</option>
+              <option>SUPER_ADMIN</option>
+            </SelectField>
+          </div>
+          <div className="modal-actions">
+            <Button
+              variant="ghost"
+              type="button"
+              onClick={() => setOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button>Create</Button>
+          </div>
+        </form>
+      </Modal>
+      <Toast toast={toast} onClose={() => setToast(null)} />
+    </>
+  );
+}
