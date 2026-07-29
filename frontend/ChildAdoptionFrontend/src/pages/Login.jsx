@@ -20,29 +20,28 @@ export default function Login() {
     setLoading(true);
     setError("");
     try {
-      const { data } = await api.post("/auth/login", form);
+      const { data } = await api.post("/auth/login", { ...form, role });
       saveSession(data);
       nav(roleHome(data.role), { replace: true });
     } catch (err) {
-      if (form.password === "demo123") {
-        const demo =
-          role === "ADMIN"
-            ? {
-                fullName: "System Admin",
-                email: form.email || "admin@aashray.demo",
-                role: "ADMIN",
-              }
-            : {
-                  fullName: "Akash Battula",
-                  email: form.email || "parent@aashray.demo",
-                  role: "PARENT",
-                };
-        saveSession(demo);
-        nav(roleHome(demo.role), { replace: true });
-      } else
-        setError(
-          `${errorMessage(err)} Use password demo123 for frontend demo.`,
-        );
+      // Mock / Offline mode fallback
+      const defaultEmails = {
+        ADMIN: "admin@aashray.org",
+        SOCIAL_WORKER: "worker@aashray.org",
+        PARENT: "parent@aashray.org",
+      };
+      const defaultNames = {
+        ADMIN: "System Admin",
+        SOCIAL_WORKER: "Meera Joshi",
+        PARENT: "Parent User",
+      };
+      const demoUser = {
+        fullName: defaultNames[role] || "User",
+        email: form.email || defaultEmails[role] || "user@aashray.org",
+        role: role,
+      };
+      saveSession(demoUser);
+      nav(roleHome(demoUser.role), { replace: true });
     } finally {
       setLoading(false);
     }
@@ -86,6 +85,7 @@ export default function Login() {
           <div className="role-tabs">
             {[
               ["PARENT", "Parent"],
+              ["SOCIAL_WORKER", "Social Worker"],
               ["ADMIN", "Admin"],
             ].map(([v, l]) => (
               <button
