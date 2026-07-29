@@ -1,119 +1,130 @@
-using ChildAdoptionAdmin.Api.Data;
+using System.Security.Claims;
 using ChildAdoptionAdmin.Api.DTOs;
-using ChildAdoptionAdmin.Api.Models;
 using ChildAdoptionAdmin.Api.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using System.Security.Claims;
 
 namespace ChildAdoptionAdmin.Api.Controllers;
 
 [ApiController]
+[Route("api/admin/social-workers")]
 [Route("api/social-workers")]
-[Authorize]
+[Authorize(Roles = "ADMIN,SUPER_ADMIN")]
 public class SocialWorkersController : ControllerBase
 {
-    private readonly AppDbContext _db;
-    public SocialWorkersController(AppDbContext db) => _db = db;
+    private readonly ISocialWorkerService _service;
 
-    // GET /api/social-workers?search=&status=
-    [HttpGet]
-    public async Task<ActionResult<List<SocialWorkerResponse>>> GetAll([FromQuery] string? search, [FromQuery] string? status)
+    public SocialWorkersController(ISocialWorkerService service)
     {
-        var query = _db.SocialWorkers.AsQueryable();
-
-        if (!string.IsNullOrWhiteSpace(search))
-            query = query.Where(s => s.FirstName.Contains(search) || s.Email.Contains(search) || s.Phone.Contains(search));
-
-        if (!string.IsNullOrWhiteSpace(status))
-            query = query.Where(s => s.Status == status);
-
-        var list = await query.OrderByDescending(s => s.CreatedAt)
-            .Select(s => new SocialWorkerResponse(
-                s.SocialWorkerId, s.SocialWorkerCode, s.FirstName, s.LastName,
-                s.Email, s.Phone, s.District, s.Area, s.Status, s.CreatedAt))
-            .ToListAsync();
-
-        return Ok(list);
+        _service = service;
     }
 
-    // GET /api/social-workers/5
-    [HttpGet("{id:long}")]
-    public async Task<ActionResult<SocialWorkerResponse>> GetById(long id)
-    {
-        var s = await _db.SocialWorkers.FindAsync(id);
-        if (s is null) return NotFound();
-
-        return Ok(new SocialWorkerResponse(
-            s.SocialWorkerId, s.SocialWorkerCode, s.FirstName, s.LastName,
-            s.Email, s.Phone, s.District, s.Area, s.Status, s.CreatedAt));
-    }
-
-    // POST /api/social-workers
+    // 1. Add Social Worker: POST /api/admin/social-workers
     [HttpPost]
-    public async Task<ActionResult<SocialWorkerResponse>> Create(CreateSocialWorkerRequest request)
+    [ProducesResponseType(typeof(ApiResponse<SocialWorkerResponse>), StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(ApiResponse<SocialWorkerResponse>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse<SocialWorkerResponse>), StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> Create([FromBody] CreateSocialWorkerRequest request)
     {
-        if (await _db.SocialWorkers.AnyAsync(s => s.Email == request.Email || s.Phone == request.Phone))
-            return Conflict(new { message = "A social worker with this email or phone already exists." });
-
-        var count = await _db.SocialWorkers.CountAsync();
         var adminIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue("sub");
+        long? adminId = adminIdClaim != null ? long.Parse(adminIdClaim) : null;
 
-        var entity = new SocialWorker
+        var result = await _service.CreateAsync(request, adminId);
+        if (!result.Success)
         {
-            SocialWorkerCode = CodeGenerator.Generate("SW", count + 1),
-            FirstName = request.FirstName,
-            LastName = request.LastName,
-            Email = request.Email,
-            Password = BCrypt.Net.BCrypt.HashPassword(request.Password),
-            Phone = request.Phone,
-            District = request.District,
-            Area = request.Area,
-            Status = "ACTIVE",
-            CreatedByAdminId = adminIdClaim != null ? long.Parse(adminIdClaim) : null,
-            CreatedAt = DateTime.UtcNow
-        };
+            if (result.Message.Contains("Duplicate", StringComparison.OrdinalIgnoreCase))
+                return Conflict(result);
+            return BadRequest(result);
+        }
 
-        _db.SocialWorkers.Add(entity);
-        await _db.SaveChangesAsync();
-
-        var response = new SocialWorkerResponse(
-            entity.SocialWorkerId, entity.SocialWorkerCode, entity.FirstName, entity.LastName,
-            entity.Email, entity.Phone, entity.District, entity.Area, entity.Status, entity.CreatedAt);
-
-        return CreatedAtAction(nameof(GetById), new { id = entity.SocialWorkerId }, response);
+        return CreatedAtAction(nameof(GetById), new { id = result.Data!.SocialWorkerId }, result);
     }
 
-    // PUT /api/social-workers/5
-    [HttpPut("{id:long}")]
-    public async Task<ActionResult<SocialWorkerResponse>> Update(long id, UpdateSocialWorkerRequest request)
+    // 2. Get All Social Workers: GET /api/admin/social-workers
+    [HttpGet]
+    [ProducesResponseType(typeof(ApiResponse<PagedResponse<SocialWorkerResponse>>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetAll(
+        [FromQuery] string? search,
+        [FromQuery] string? status,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 10)
     {
-        var entity = await _db.SocialWorkers.FindAsync(id);
-        if (entity is null) return NotFound();
-
-        entity.FirstName = request.FirstName;
-        entity.LastName = request.LastName;
-        entity.District = request.District;
-        entity.Area = request.Area;
-        entity.Status = request.Status;
-
-        await _db.SaveChangesAsync();
-
-        return Ok(new SocialWorkerResponse(
-            entity.SocialWorkerId, entity.SocialWorkerCode, entity.FirstName, entity.LastName,
-            entity.Email, entity.Phone, entity.District, entity.Area, entity.Status, entity.CreatedAt));
+        var result = await _service.GetAllAsync(search, status, page, pageSize);
+        return Ok(result);
     }
 
-    // DELETE /api/social-workers/5
+    // 3. Get Social Worker By Id: GET /api/admin/social-workers/{id}
+    [HttpGet("{id:long}")]
+    [ProducesResponseType(typeof(ApiResponse<SocialWorkerDetailResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<SocialWorkerDetailResponse>), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetById(long id)
+    {
+        var result = await _service.GetByIdAsync(id);
+        if (!result.Success)
+            return NotFound(result);
+
+        return Ok(result);
+    }
+
+    // 4. Update Social Worker: PUT /api/admin/social-workers/{id}
+    [HttpPut("{id:long}")]
+    [ProducesResponseType(typeof(ApiResponse<SocialWorkerResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<SocialWorkerResponse>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse<SocialWorkerResponse>), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> Update(long id, [FromBody] UpdateSocialWorkerRequest request)
+    {
+        var result = await _service.UpdateAsync(id, request);
+        if (!result.Success)
+        {
+            if (result.Message.Contains("not found", StringComparison.OrdinalIgnoreCase))
+                return NotFound(result);
+            return BadRequest(result);
+        }
+
+        return Ok(result);
+    }
+
+    // 5. Activate Social Worker: PATCH /api/admin/social-workers/{id}/activate
+    [HttpPatch("{id:long}/activate")]
+    [ProducesResponseType(typeof(ApiResponse<SocialWorkerResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<SocialWorkerResponse>), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> Activate(long id)
+    {
+        var result = await _service.ActivateAsync(id);
+        if (!result.Success)
+            return NotFound(result);
+
+        return Ok(result);
+    }
+
+    // 6. Deactivate Social Worker: PATCH /api/admin/social-workers/{id}/deactivate
+    [HttpPatch("{id:long}/deactivate")]
+    [ProducesResponseType(typeof(ApiResponse<SocialWorkerResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<SocialWorkerResponse>), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> Deactivate(long id)
+    {
+        var result = await _service.DeactivateAsync(id);
+        if (!result.Success)
+            return NotFound(result);
+
+        return Ok(result);
+    }
+
+    // 7. Delete Social Worker: DELETE /api/admin/social-workers/{id}
     [HttpDelete("{id:long}")]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> Delete(long id)
     {
-        var entity = await _db.SocialWorkers.FindAsync(id);
-        if (entity is null) return NotFound();
+        var result = await _service.DeleteAsync(id);
+        if (!result.Success)
+        {
+            if (result.Message.Contains("not found", StringComparison.OrdinalIgnoreCase))
+                return NotFound(result);
+            return BadRequest(result);
+        }
 
-        _db.SocialWorkers.Remove(entity);
-        await _db.SaveChangesAsync();
-        return NoContent();
+        return Ok(result);
     }
 }
