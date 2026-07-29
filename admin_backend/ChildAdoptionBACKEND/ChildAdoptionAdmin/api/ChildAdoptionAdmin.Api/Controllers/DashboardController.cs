@@ -7,33 +7,53 @@ using Microsoft.EntityFrameworkCore;
 namespace ChildAdoptionAdmin.Api.Controllers;
 
 [ApiController]
+[Route("api/admin/dashboard")]
 [Route("api/dashboard")]
-[Authorize]
+[Authorize(Roles = "ADMIN,SUPER_ADMIN")]
 public class DashboardController : ControllerBase
 {
     private readonly AppDbContext _db;
+
     public DashboardController(AppDbContext db) => _db = db;
 
-    // GET /api/dashboard/stats
+    // GET /api/admin/dashboard or GET /api/dashboard
+    [HttpGet]
     [HttpGet("stats")]
-    public async Task<ActionResult<DashboardStatsResponse>> GetStats()
+    public async Task<IActionResult> GetStats()
     {
+        var totalSocialWorkers = await _db.SocialWorkers.CountAsync();
+        var activeWorkers = await _db.SocialWorkers.CountAsync(w => w.Status == "ACTIVE");
+        var inactiveWorkers = await _db.SocialWorkers.CountAsync(w => w.Status == "INACTIVE");
+        var pendingVisits = await _db.HomeVisits.CountAsync(v => v.Status == "PENDING");
+        var completedVisits = await _db.HomeVisits.CountAsync(v => v.Status == "COMPLETED");
+
+        var totalParents = await _db.Users.CountAsync();
+        var totalChildren = await _db.Children.CountAsync();
+        var totalApplications = await _db.AdoptionRequests.CountAsync();
+        var underReviewApplications = await _db.AdoptionRequests.CountAsync(r => r.Status == "UNDER_REVIEW");
+        var approvedApplications = await _db.AdoptionRequests.CountAsync(r => r.Status == "APPROVED");
+        var rejectedApplications = await _db.AdoptionRequests.CountAsync(r => r.Status == "REJECTED");
+
         var stats = new DashboardStatsResponse(
-            TotalParents: await _db.Users.CountAsync(),
-            TotalChildren: await _db.Children.CountAsync(),
-            TotalApplications: await _db.AdoptionRequests.CountAsync(),
-            UnderReviewApplications: await _db.AdoptionRequests.CountAsync(r => r.Status == "UNDER_REVIEW"),
-            ApprovedApplications: await _db.AdoptionRequests.CountAsync(r => r.Status == "APPROVED"),
-            RejectedApplications: await _db.AdoptionRequests.CountAsync(r => r.Status == "REJECTED"),
-            PendingHomeVisits: await _db.HomeVisits.CountAsync(v => v.Status == "PENDING"),
-            CompletedHomeVisits: await _db.HomeVisits.CountAsync(v => v.Status == "COMPLETED")
+            TotalParents: totalParents,
+            TotalChildren: totalChildren,
+            TotalApplications: totalApplications,
+            UnderReviewApplications: underReviewApplications,
+            ApprovedApplications: approvedApplications,
+            RejectedApplications: rejectedApplications,
+            PendingHomeVisits: pendingVisits,
+            CompletedHomeVisits: completedVisits,
+            TotalSocialWorkers: totalSocialWorkers,
+            ActiveWorkers: activeWorkers,
+            InactiveWorkers: inactiveWorkers
         );
-        return Ok(stats);
+
+        return Ok(ApiResponse<DashboardStatsResponse>.Ok(stats, "Dashboard metrics retrieved successfully"));
     }
 
-    // GET /api/dashboard/recent-activity
+    // GET /api/admin/dashboard/recent-activity or GET /api/dashboard/recent-activity
     [HttpGet("recent-activity")]
-    public async Task<ActionResult> GetRecentActivity()
+    public async Task<IActionResult> GetRecentActivity()
     {
         var recentApplications = await _db.AdoptionRequests
             .OrderByDescending(r => r.RequestDate)
@@ -47,6 +67,6 @@ public class DashboardController : ControllerBase
             .Select(v => new { v.VisitCode, v.Status, v.ScheduledDate })
             .ToListAsync();
 
-        return Ok(new { recentApplications, recentVisits });
+        return Ok(ApiResponse<object>.Ok(new { recentApplications, recentVisits }, "Recent activity retrieved successfully"));
     }
 }

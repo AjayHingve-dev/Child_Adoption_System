@@ -43,6 +43,10 @@ builder.Services.AddAuthentication(options =>
 
 builder.Services.AddAuthorization();
 builder.Services.AddScoped<JwtService>();
+builder.Services.AddScoped<ChildAdoptionAdmin.Api.Repositories.ISocialWorkerRepository, ChildAdoptionAdmin.Api.Repositories.SocialWorkerRepository>();
+builder.Services.AddScoped<ChildAdoptionAdmin.Api.Repositories.IHomeVisitRepository, ChildAdoptionAdmin.Api.Repositories.HomeVisitRepository>();
+builder.Services.AddScoped<ChildAdoptionAdmin.Api.Services.ISocialWorkerService, ChildAdoptionAdmin.Api.Services.SocialWorkerService>();
+builder.Services.AddScoped<ChildAdoptionAdmin.Api.Services.IHomeVisitService, ChildAdoptionAdmin.Api.Services.HomeVisitService>();
 
 var allowedOrigins = builder.Configuration
     .GetSection("Cors:AllowedOrigins")

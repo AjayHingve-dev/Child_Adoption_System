@@ -3062,11 +3062,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "D:\\SunPP\\P2\\pr5\\BACKEND\\ChildAdoptionAdmin_PART2_ADD_CHILD_FIXED_BACKEND\\ChildAdoptionAdmin\\api\\ChildAdoptionAdmin.Api\\ChildAdoptionAdmin.Api.csproj",
+      "projectUniqueName": "d:\\cdac\\prfi\\Child_Adoption_System\\admin_backend\\ChildAdoptionBACKEND\\ChildAdoptionAdmin\\api\\ChildAdoptionAdmin.Api\\ChildAdoptionAdmin.Api.csproj",
       "projectName": "ChildAdoptionAdmin.Api",
-      "projectPath": "D:\\SunPP\\P2\\pr5\\BACKEND\\ChildAdoptionAdmin_PART2_ADD_CHILD_FIXED_BACKEND\\ChildAdoptionAdmin\\api\\ChildAdoptionAdmin.Api\\ChildAdoptionAdmin.Api.csproj",
+      "projectPath": "d:\\cdac\\prfi\\Child_Adoption_System\\admin_backend\\ChildAdoptionBACKEND\\ChildAdoptionAdmin\\api\\ChildAdoptionAdmin.Api\\ChildAdoptionAdmin.Api.csproj",
       "packagesPath": "C:\\Users\\HP\\.nuget\\packages\\",
-      "outputPath": "D:\\SunPP\\P2\\pr5\\BACKEND\\ChildAdoptionAdmin_PART2_ADD_CHILD_FIXED_BACKEND\\ChildAdoptionAdmin\\api\\ChildAdoptionAdmin.Api\\obj\\",
+      "outputPath": "d:\\cdac\\prfi\\Child_Adoption_System\\admin_backend\\ChildAdoptionBACKEND\\ChildAdoptionAdmin\\api\\ChildAdoptionAdmin.Api\\obj\\",
       "projectStyle": "PackageReference",
       "fallbackFolders": [
         "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"

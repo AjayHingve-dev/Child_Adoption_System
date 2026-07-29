@@ -1,5 +1,620 @@
 [
   {
+    "ContainingType": "ChildAdoptionAdmin.Api.Controllers.DashboardController",
+    "Method": "GetStats",
+    "RelativePath": "api/admin/dashboard",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "ChildAdoptionAdmin.Api.Controllers.DashboardController",
+    "Method": "GetRecentActivity",
+    "RelativePath": "api/admin/dashboard/recent-activity",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "ChildAdoptionAdmin.Api.Controllers.DashboardController",
+    "Method": "GetStats",
+    "RelativePath": "api/admin/dashboard/stats",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "ChildAdoptionAdmin.Api.Controllers.HomeVisitsController",
+    "Method": "AssignVisit",
+    "RelativePath": "api/admin/home-visits",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "ChildAdoptionAdmin.Api.DTOs.AdminAssignHomeVisitRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "ChildAdoptionAdmin.Api.DTOs.ApiResponse\u00601[[ChildAdoptionAdmin.Api.DTOs.HomeVisitResponse, ChildAdoptionAdmin.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 201
+      },
+      {
+        "Type": "ChildAdoptionAdmin.Api.DTOs.ApiResponse\u00601[[ChildAdoptionAdmin.Api.DTOs.HomeVisitResponse, ChildAdoptionAdmin.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 400
+      },
+      {
+        "Type": "ChildAdoptionAdmin.Api.DTOs.ApiResponse\u00601[[ChildAdoptionAdmin.Api.DTOs.HomeVisitResponse, ChildAdoptionAdmin.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 404
+      }
+    ]
+  },
+  {
+    "ContainingType": "ChildAdoptionAdmin.Api.Controllers.HomeVisitsController",
+    "Method": "GetAll",
+    "RelativePath": "api/admin/home-visits",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "status",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "search",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "socialWorkerId",
+        "Type": "System.Nullable\u00601[[System.Int64, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "IsRequired": false
+      },
+      {
+        "Name": "visitDate",
+        "Type": "System.Nullable\u00601[[System.DateTime, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "IsRequired": false
+      },
+      {
+        "Name": "page",
+        "Type": "System.Int32",
+        "IsRequired": false
+      },
+      {
+        "Name": "pageSize",
+        "Type": "System.Int32",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "ChildAdoptionAdmin.Api.DTOs.ApiResponse\u00601[[ChildAdoptionAdmin.Api.DTOs.PagedResponse\u00601[[ChildAdoptionAdmin.Api.DTOs.HomeVisitResponse, ChildAdoptionAdmin.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]], ChildAdoptionAdmin.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "ChildAdoptionAdmin.Api.Controllers.HomeVisitsController",
+    "Method": "GetById",
+    "RelativePath": "api/admin/home-visits/{id}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int64",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "ChildAdoptionAdmin.Api.DTOs.ApiResponse\u00601[[ChildAdoptionAdmin.Api.DTOs.HomeVisitDetailResponse, ChildAdoptionAdmin.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      },
+      {
+        "Type": "ChildAdoptionAdmin.Api.DTOs.ApiResponse\u00601[[ChildAdoptionAdmin.Api.DTOs.HomeVisitDetailResponse, ChildAdoptionAdmin.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 404
+      }
+    ]
+  },
+  {
+    "ContainingType": "ChildAdoptionAdmin.Api.Controllers.HomeVisitsController",
+    "Method": "UpdateVisit",
+    "RelativePath": "api/admin/home-visits/{id}",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int64",
+        "IsRequired": true
+      },
+      {
+        "Name": "request",
+        "Type": "ChildAdoptionAdmin.Api.DTOs.AdminUpdateHomeVisitRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "ChildAdoptionAdmin.Api.DTOs.ApiResponse\u00601[[ChildAdoptionAdmin.Api.DTOs.HomeVisitResponse, ChildAdoptionAdmin.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      },
+      {
+        "Type": "ChildAdoptionAdmin.Api.DTOs.ApiResponse\u00601[[ChildAdoptionAdmin.Api.DTOs.HomeVisitResponse, ChildAdoptionAdmin.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 400
+      },
+      {
+        "Type": "ChildAdoptionAdmin.Api.DTOs.ApiResponse\u00601[[ChildAdoptionAdmin.Api.DTOs.HomeVisitResponse, ChildAdoptionAdmin.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 404
+      }
+    ]
+  },
+  {
+    "ContainingType": "ChildAdoptionAdmin.Api.Controllers.HomeVisitsController",
+    "Method": "CancelVisit",
+    "RelativePath": "api/admin/home-visits/{id}/cancel",
+    "HttpMethod": "PATCH",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int64",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "ChildAdoptionAdmin.Api.DTOs.ApiResponse\u00601[[ChildAdoptionAdmin.Api.DTOs.HomeVisitResponse, ChildAdoptionAdmin.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      },
+      {
+        "Type": "ChildAdoptionAdmin.Api.DTOs.ApiResponse\u00601[[ChildAdoptionAdmin.Api.DTOs.HomeVisitResponse, ChildAdoptionAdmin.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 400
+      },
+      {
+        "Type": "ChildAdoptionAdmin.Api.DTOs.ApiResponse\u00601[[ChildAdoptionAdmin.Api.DTOs.HomeVisitResponse, ChildAdoptionAdmin.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 404
+      }
+    ]
+  },
+  {
+    "ContainingType": "ChildAdoptionAdmin.Api.Controllers.HomeVisitsController",
+    "Method": "CancelVisit",
+    "RelativePath": "api/admin/home-visits/{id}/cancel",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int64",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "ChildAdoptionAdmin.Api.DTOs.ApiResponse\u00601[[ChildAdoptionAdmin.Api.DTOs.HomeVisitResponse, ChildAdoptionAdmin.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      },
+      {
+        "Type": "ChildAdoptionAdmin.Api.DTOs.ApiResponse\u00601[[ChildAdoptionAdmin.Api.DTOs.HomeVisitResponse, ChildAdoptionAdmin.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 400
+      },
+      {
+        "Type": "ChildAdoptionAdmin.Api.DTOs.ApiResponse\u00601[[ChildAdoptionAdmin.Api.DTOs.HomeVisitResponse, ChildAdoptionAdmin.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 404
+      }
+    ]
+  },
+  {
+    "ContainingType": "ChildAdoptionAdmin.Api.Controllers.HomeVisitsController",
+    "Method": "GetReport",
+    "RelativePath": "api/admin/home-visits/{id}/report",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int64",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "ChildAdoptionAdmin.Api.DTOs.ApiResponse\u00601[[ChildAdoptionAdmin.Api.DTOs.HomeVisitReportResponse, ChildAdoptionAdmin.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      },
+      {
+        "Type": "ChildAdoptionAdmin.Api.DTOs.ApiResponse\u00601[[ChildAdoptionAdmin.Api.DTOs.HomeVisitReportResponse, ChildAdoptionAdmin.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 404
+      }
+    ]
+  },
+  {
+    "ContainingType": "ChildAdoptionAdmin.Api.Controllers.SocialWorkersController",
+    "Method": "Create",
+    "RelativePath": "api/admin/social-workers",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "ChildAdoptionAdmin.Api.DTOs.CreateSocialWorkerRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "ChildAdoptionAdmin.Api.DTOs.ApiResponse\u00601[[ChildAdoptionAdmin.Api.DTOs.SocialWorkerResponse, ChildAdoptionAdmin.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 201
+      },
+      {
+        "Type": "ChildAdoptionAdmin.Api.DTOs.ApiResponse\u00601[[ChildAdoptionAdmin.Api.DTOs.SocialWorkerResponse, ChildAdoptionAdmin.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 400
+      },
+      {
+        "Type": "ChildAdoptionAdmin.Api.DTOs.ApiResponse\u00601[[ChildAdoptionAdmin.Api.DTOs.SocialWorkerResponse, ChildAdoptionAdmin.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 409
+      }
+    ]
+  },
+  {
+    "ContainingType": "ChildAdoptionAdmin.Api.Controllers.SocialWorkersController",
+    "Method": "GetAll",
+    "RelativePath": "api/admin/social-workers",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "search",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "status",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "page",
+        "Type": "System.Int32",
+        "IsRequired": false
+      },
+      {
+        "Name": "pageSize",
+        "Type": "System.Int32",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "ChildAdoptionAdmin.Api.DTOs.ApiResponse\u00601[[ChildAdoptionAdmin.Api.DTOs.PagedResponse\u00601[[ChildAdoptionAdmin.Api.DTOs.SocialWorkerResponse, ChildAdoptionAdmin.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]], ChildAdoptionAdmin.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "ChildAdoptionAdmin.Api.Controllers.SocialWorkersController",
+    "Method": "GetById",
+    "RelativePath": "api/admin/social-workers/{id}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int64",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "ChildAdoptionAdmin.Api.DTOs.ApiResponse\u00601[[ChildAdoptionAdmin.Api.DTOs.SocialWorkerDetailResponse, ChildAdoptionAdmin.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      },
+      {
+        "Type": "ChildAdoptionAdmin.Api.DTOs.ApiResponse\u00601[[ChildAdoptionAdmin.Api.DTOs.SocialWorkerDetailResponse, ChildAdoptionAdmin.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 404
+      }
+    ]
+  },
+  {
+    "ContainingType": "ChildAdoptionAdmin.Api.Controllers.SocialWorkersController",
+    "Method": "Update",
+    "RelativePath": "api/admin/social-workers/{id}",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int64",
+        "IsRequired": true
+      },
+      {
+        "Name": "request",
+        "Type": "ChildAdoptionAdmin.Api.DTOs.UpdateSocialWorkerRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "ChildAdoptionAdmin.Api.DTOs.ApiResponse\u00601[[ChildAdoptionAdmin.Api.DTOs.SocialWorkerResponse, ChildAdoptionAdmin.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      },
+      {
+        "Type": "ChildAdoptionAdmin.Api.DTOs.ApiResponse\u00601[[ChildAdoptionAdmin.Api.DTOs.SocialWorkerResponse, ChildAdoptionAdmin.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 400
+      },
+      {
+        "Type": "ChildAdoptionAdmin.Api.DTOs.ApiResponse\u00601[[ChildAdoptionAdmin.Api.DTOs.SocialWorkerResponse, ChildAdoptionAdmin.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 404
+      }
+    ]
+  },
+  {
+    "ContainingType": "ChildAdoptionAdmin.Api.Controllers.SocialWorkersController",
+    "Method": "Delete",
+    "RelativePath": "api/admin/social-workers/{id}",
+    "HttpMethod": "DELETE",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int64",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "ChildAdoptionAdmin.Api.DTOs.ApiResponse",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      },
+      {
+        "Type": "ChildAdoptionAdmin.Api.DTOs.ApiResponse",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 400
+      },
+      {
+        "Type": "ChildAdoptionAdmin.Api.DTOs.ApiResponse",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 404
+      }
+    ]
+  },
+  {
+    "ContainingType": "ChildAdoptionAdmin.Api.Controllers.SocialWorkersController",
+    "Method": "Activate",
+    "RelativePath": "api/admin/social-workers/{id}/activate",
+    "HttpMethod": "PATCH",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int64",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "ChildAdoptionAdmin.Api.DTOs.ApiResponse\u00601[[ChildAdoptionAdmin.Api.DTOs.SocialWorkerResponse, ChildAdoptionAdmin.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      },
+      {
+        "Type": "ChildAdoptionAdmin.Api.DTOs.ApiResponse\u00601[[ChildAdoptionAdmin.Api.DTOs.SocialWorkerResponse, ChildAdoptionAdmin.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 404
+      }
+    ]
+  },
+  {
+    "ContainingType": "ChildAdoptionAdmin.Api.Controllers.SocialWorkersController",
+    "Method": "Deactivate",
+    "RelativePath": "api/admin/social-workers/{id}/deactivate",
+    "HttpMethod": "PATCH",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int64",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "ChildAdoptionAdmin.Api.DTOs.ApiResponse\u00601[[ChildAdoptionAdmin.Api.DTOs.SocialWorkerResponse, ChildAdoptionAdmin.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      },
+      {
+        "Type": "ChildAdoptionAdmin.Api.DTOs.ApiResponse\u00601[[ChildAdoptionAdmin.Api.DTOs.SocialWorkerResponse, ChildAdoptionAdmin.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 404
+      }
+    ]
+  },
+  {
     "ContainingType": "ChildAdoptionAdmin.Api.Controllers.AdminsController",
     "Method": "GetAll",
     "RelativePath": "api/admins",
@@ -431,6 +1046,16 @@
   },
   {
     "ContainingType": "ChildAdoptionAdmin.Api.Controllers.DashboardController",
+    "Method": "GetStats",
+    "RelativePath": "api/dashboard",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "ChildAdoptionAdmin.Api.Controllers.DashboardController",
     "Method": "GetRecentActivity",
     "RelativePath": "api/dashboard/recent-activity",
     "HttpMethod": "GET",
@@ -447,15 +1072,49 @@
     "IsController": true,
     "Order": 0,
     "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "ChildAdoptionAdmin.Api.Controllers.HomeVisitsController",
+    "Method": "AssignVisit",
+    "RelativePath": "api/home-visits",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "ChildAdoptionAdmin.Api.DTOs.AdminAssignHomeVisitRequest",
+        "IsRequired": true
+      }
+    ],
     "ReturnTypes": [
       {
-        "Type": "ChildAdoptionAdmin.Api.DTOs.DashboardStatsResponse",
+        "Type": "ChildAdoptionAdmin.Api.DTOs.ApiResponse\u00601[[ChildAdoptionAdmin.Api.DTOs.HomeVisitResponse, ChildAdoptionAdmin.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
         "MediaTypes": [
           "text/plain",
           "application/json",
           "text/json"
         ],
-        "StatusCode": 200
+        "StatusCode": 201
+      },
+      {
+        "Type": "ChildAdoptionAdmin.Api.DTOs.ApiResponse\u00601[[ChildAdoptionAdmin.Api.DTOs.HomeVisitResponse, ChildAdoptionAdmin.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 400
+      },
+      {
+        "Type": "ChildAdoptionAdmin.Api.DTOs.ApiResponse\u00601[[ChildAdoptionAdmin.Api.DTOs.HomeVisitResponse, ChildAdoptionAdmin.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 404
       }
     ]
   },
@@ -486,11 +1145,21 @@
         "Name": "visitDate",
         "Type": "System.Nullable\u00601[[System.DateTime, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
         "IsRequired": false
+      },
+      {
+        "Name": "page",
+        "Type": "System.Int32",
+        "IsRequired": false
+      },
+      {
+        "Name": "pageSize",
+        "Type": "System.Int32",
+        "IsRequired": false
       }
     ],
     "ReturnTypes": [
       {
-        "Type": "System.Collections.Generic.List\u00601[[ChildAdoptionAdmin.Api.DTOs.HomeVisitResponse, ChildAdoptionAdmin.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "Type": "ChildAdoptionAdmin.Api.DTOs.ApiResponse\u00601[[ChildAdoptionAdmin.Api.DTOs.PagedResponse\u00601[[ChildAdoptionAdmin.Api.DTOs.HomeVisitResponse, ChildAdoptionAdmin.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]], ChildAdoptionAdmin.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -499,22 +1168,6 @@
         "StatusCode": 200
       }
     ]
-  },
-  {
-    "ContainingType": "ChildAdoptionAdmin.Api.Controllers.HomeVisitsController",
-    "Method": "Schedule",
-    "RelativePath": "api/home-visits",
-    "HttpMethod": "POST",
-    "IsController": true,
-    "Order": 0,
-    "Parameters": [
-      {
-        "Name": "request",
-        "Type": "ChildAdoptionAdmin.Api.DTOs.ScheduleHomeVisitRequest",
-        "IsRequired": true
-      }
-    ],
-    "ReturnTypes": []
   },
   {
     "ContainingType": "ChildAdoptionAdmin.Api.Controllers.HomeVisitsController",
@@ -532,19 +1185,28 @@
     ],
     "ReturnTypes": [
       {
-        "Type": "ChildAdoptionAdmin.Api.DTOs.HomeVisitDetailResponse",
+        "Type": "ChildAdoptionAdmin.Api.DTOs.ApiResponse\u00601[[ChildAdoptionAdmin.Api.DTOs.HomeVisitDetailResponse, ChildAdoptionAdmin.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
         "MediaTypes": [
           "text/plain",
           "application/json",
           "text/json"
         ],
         "StatusCode": 200
+      },
+      {
+        "Type": "ChildAdoptionAdmin.Api.DTOs.ApiResponse\u00601[[ChildAdoptionAdmin.Api.DTOs.HomeVisitDetailResponse, ChildAdoptionAdmin.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 404
       }
     ]
   },
   {
     "ContainingType": "ChildAdoptionAdmin.Api.Controllers.HomeVisitsController",
-    "Method": "Reschedule",
+    "Method": "UpdateVisit",
     "RelativePath": "api/home-visits/{id}",
     "HttpMethod": "PUT",
     "IsController": true,
@@ -557,15 +1219,87 @@
       },
       {
         "Name": "request",
-        "Type": "ChildAdoptionAdmin.Api.DTOs.UpdateHomeVisitRequest",
+        "Type": "ChildAdoptionAdmin.Api.DTOs.AdminUpdateHomeVisitRequest",
         "IsRequired": true
       }
     ],
-    "ReturnTypes": []
+    "ReturnTypes": [
+      {
+        "Type": "ChildAdoptionAdmin.Api.DTOs.ApiResponse\u00601[[ChildAdoptionAdmin.Api.DTOs.HomeVisitResponse, ChildAdoptionAdmin.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      },
+      {
+        "Type": "ChildAdoptionAdmin.Api.DTOs.ApiResponse\u00601[[ChildAdoptionAdmin.Api.DTOs.HomeVisitResponse, ChildAdoptionAdmin.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 400
+      },
+      {
+        "Type": "ChildAdoptionAdmin.Api.DTOs.ApiResponse\u00601[[ChildAdoptionAdmin.Api.DTOs.HomeVisitResponse, ChildAdoptionAdmin.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 404
+      }
+    ]
   },
   {
     "ContainingType": "ChildAdoptionAdmin.Api.Controllers.HomeVisitsController",
-    "Method": "Cancel",
+    "Method": "CancelVisit",
+    "RelativePath": "api/home-visits/{id}/cancel",
+    "HttpMethod": "PATCH",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int64",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "ChildAdoptionAdmin.Api.DTOs.ApiResponse\u00601[[ChildAdoptionAdmin.Api.DTOs.HomeVisitResponse, ChildAdoptionAdmin.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      },
+      {
+        "Type": "ChildAdoptionAdmin.Api.DTOs.ApiResponse\u00601[[ChildAdoptionAdmin.Api.DTOs.HomeVisitResponse, ChildAdoptionAdmin.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 400
+      },
+      {
+        "Type": "ChildAdoptionAdmin.Api.DTOs.ApiResponse\u00601[[ChildAdoptionAdmin.Api.DTOs.HomeVisitResponse, ChildAdoptionAdmin.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 404
+      }
+    ]
+  },
+  {
+    "ContainingType": "ChildAdoptionAdmin.Api.Controllers.HomeVisitsController",
+    "Method": "CancelVisit",
     "RelativePath": "api/home-visits/{id}/cancel",
     "HttpMethod": "PUT",
     "IsController": true,
@@ -577,13 +1311,41 @@
         "IsRequired": true
       }
     ],
-    "ReturnTypes": []
+    "ReturnTypes": [
+      {
+        "Type": "ChildAdoptionAdmin.Api.DTOs.ApiResponse\u00601[[ChildAdoptionAdmin.Api.DTOs.HomeVisitResponse, ChildAdoptionAdmin.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      },
+      {
+        "Type": "ChildAdoptionAdmin.Api.DTOs.ApiResponse\u00601[[ChildAdoptionAdmin.Api.DTOs.HomeVisitResponse, ChildAdoptionAdmin.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 400
+      },
+      {
+        "Type": "ChildAdoptionAdmin.Api.DTOs.ApiResponse\u00601[[ChildAdoptionAdmin.Api.DTOs.HomeVisitResponse, ChildAdoptionAdmin.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 404
+      }
+    ]
   },
   {
     "ContainingType": "ChildAdoptionAdmin.Api.Controllers.HomeVisitsController",
-    "Method": "Complete",
-    "RelativePath": "api/home-visits/{id}/complete",
-    "HttpMethod": "PUT",
+    "Method": "GetReport",
+    "RelativePath": "api/home-visits/{id}/report",
+    "HttpMethod": "GET",
     "IsController": true,
     "Order": 0,
     "Parameters": [
@@ -591,14 +1353,28 @@
         "Name": "id",
         "Type": "System.Int64",
         "IsRequired": true
-      },
-      {
-        "Name": "request",
-        "Type": "ChildAdoptionAdmin.Api.DTOs.CompleteHomeVisitRequest",
-        "IsRequired": true
       }
     ],
-    "ReturnTypes": []
+    "ReturnTypes": [
+      {
+        "Type": "ChildAdoptionAdmin.Api.DTOs.ApiResponse\u00601[[ChildAdoptionAdmin.Api.DTOs.HomeVisitReportResponse, ChildAdoptionAdmin.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      },
+      {
+        "Type": "ChildAdoptionAdmin.Api.DTOs.ApiResponse\u00601[[ChildAdoptionAdmin.Api.DTOs.HomeVisitReportResponse, ChildAdoptionAdmin.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 404
+      }
+    ]
   },
   {
     "ContainingType": "ChildAdoptionAdmin.Api.Controllers.ParentsController",
@@ -868,6 +1644,50 @@
   },
   {
     "ContainingType": "ChildAdoptionAdmin.Api.Controllers.SocialWorkersController",
+    "Method": "Create",
+    "RelativePath": "api/social-workers",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "ChildAdoptionAdmin.Api.DTOs.CreateSocialWorkerRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "ChildAdoptionAdmin.Api.DTOs.ApiResponse\u00601[[ChildAdoptionAdmin.Api.DTOs.SocialWorkerResponse, ChildAdoptionAdmin.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 201
+      },
+      {
+        "Type": "ChildAdoptionAdmin.Api.DTOs.ApiResponse\u00601[[ChildAdoptionAdmin.Api.DTOs.SocialWorkerResponse, ChildAdoptionAdmin.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 400
+      },
+      {
+        "Type": "ChildAdoptionAdmin.Api.DTOs.ApiResponse\u00601[[ChildAdoptionAdmin.Api.DTOs.SocialWorkerResponse, ChildAdoptionAdmin.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 409
+      }
+    ]
+  },
+  {
+    "ContainingType": "ChildAdoptionAdmin.Api.Controllers.SocialWorkersController",
     "Method": "GetAll",
     "RelativePath": "api/social-workers",
     "HttpMethod": "GET",
@@ -883,37 +1703,21 @@
         "Name": "status",
         "Type": "System.String",
         "IsRequired": false
+      },
+      {
+        "Name": "page",
+        "Type": "System.Int32",
+        "IsRequired": false
+      },
+      {
+        "Name": "pageSize",
+        "Type": "System.Int32",
+        "IsRequired": false
       }
     ],
     "ReturnTypes": [
       {
-        "Type": "System.Collections.Generic.List\u00601[[ChildAdoptionAdmin.Api.DTOs.SocialWorkerResponse, ChildAdoptionAdmin.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
-        "MediaTypes": [
-          "text/plain",
-          "application/json",
-          "text/json"
-        ],
-        "StatusCode": 200
-      }
-    ]
-  },
-  {
-    "ContainingType": "ChildAdoptionAdmin.Api.Controllers.SocialWorkersController",
-    "Method": "Create",
-    "RelativePath": "api/social-workers",
-    "HttpMethod": "POST",
-    "IsController": true,
-    "Order": 0,
-    "Parameters": [
-      {
-        "Name": "request",
-        "Type": "ChildAdoptionAdmin.Api.DTOs.CreateSocialWorkerRequest",
-        "IsRequired": true
-      }
-    ],
-    "ReturnTypes": [
-      {
-        "Type": "ChildAdoptionAdmin.Api.DTOs.SocialWorkerResponse",
+        "Type": "ChildAdoptionAdmin.Api.DTOs.ApiResponse\u00601[[ChildAdoptionAdmin.Api.DTOs.PagedResponse\u00601[[ChildAdoptionAdmin.Api.DTOs.SocialWorkerResponse, ChildAdoptionAdmin.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]], ChildAdoptionAdmin.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -939,13 +1743,22 @@
     ],
     "ReturnTypes": [
       {
-        "Type": "ChildAdoptionAdmin.Api.DTOs.SocialWorkerResponse",
+        "Type": "ChildAdoptionAdmin.Api.DTOs.ApiResponse\u00601[[ChildAdoptionAdmin.Api.DTOs.SocialWorkerDetailResponse, ChildAdoptionAdmin.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
         "MediaTypes": [
           "text/plain",
           "application/json",
           "text/json"
         ],
         "StatusCode": 200
+      },
+      {
+        "Type": "ChildAdoptionAdmin.Api.DTOs.ApiResponse\u00601[[ChildAdoptionAdmin.Api.DTOs.SocialWorkerDetailResponse, ChildAdoptionAdmin.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 404
       }
     ]
   },
@@ -970,13 +1783,31 @@
     ],
     "ReturnTypes": [
       {
-        "Type": "ChildAdoptionAdmin.Api.DTOs.SocialWorkerResponse",
+        "Type": "ChildAdoptionAdmin.Api.DTOs.ApiResponse\u00601[[ChildAdoptionAdmin.Api.DTOs.SocialWorkerResponse, ChildAdoptionAdmin.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
         "MediaTypes": [
           "text/plain",
           "application/json",
           "text/json"
         ],
         "StatusCode": 200
+      },
+      {
+        "Type": "ChildAdoptionAdmin.Api.DTOs.ApiResponse\u00601[[ChildAdoptionAdmin.Api.DTOs.SocialWorkerResponse, ChildAdoptionAdmin.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 400
+      },
+      {
+        "Type": "ChildAdoptionAdmin.Api.DTOs.ApiResponse\u00601[[ChildAdoptionAdmin.Api.DTOs.SocialWorkerResponse, ChildAdoptionAdmin.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 404
       }
     ]
   },
@@ -994,6 +1825,104 @@
         "IsRequired": true
       }
     ],
-    "ReturnTypes": []
+    "ReturnTypes": [
+      {
+        "Type": "ChildAdoptionAdmin.Api.DTOs.ApiResponse",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      },
+      {
+        "Type": "ChildAdoptionAdmin.Api.DTOs.ApiResponse",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 400
+      },
+      {
+        "Type": "ChildAdoptionAdmin.Api.DTOs.ApiResponse",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 404
+      }
+    ]
+  },
+  {
+    "ContainingType": "ChildAdoptionAdmin.Api.Controllers.SocialWorkersController",
+    "Method": "Activate",
+    "RelativePath": "api/social-workers/{id}/activate",
+    "HttpMethod": "PATCH",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int64",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "ChildAdoptionAdmin.Api.DTOs.ApiResponse\u00601[[ChildAdoptionAdmin.Api.DTOs.SocialWorkerResponse, ChildAdoptionAdmin.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      },
+      {
+        "Type": "ChildAdoptionAdmin.Api.DTOs.ApiResponse\u00601[[ChildAdoptionAdmin.Api.DTOs.SocialWorkerResponse, ChildAdoptionAdmin.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 404
+      }
+    ]
+  },
+  {
+    "ContainingType": "ChildAdoptionAdmin.Api.Controllers.SocialWorkersController",
+    "Method": "Deactivate",
+    "RelativePath": "api/social-workers/{id}/deactivate",
+    "HttpMethod": "PATCH",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int64",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "ChildAdoptionAdmin.Api.DTOs.ApiResponse\u00601[[ChildAdoptionAdmin.Api.DTOs.SocialWorkerResponse, ChildAdoptionAdmin.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      },
+      {
+        "Type": "ChildAdoptionAdmin.Api.DTOs.ApiResponse\u00601[[ChildAdoptionAdmin.Api.DTOs.SocialWorkerResponse, ChildAdoptionAdmin.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 404
+      }
+    ]
   }
 ]
