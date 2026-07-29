@@ -30,13 +30,18 @@ import { getUser, isAuthenticated, roleHome } from "./auth";
 
 const Protected = ({ roles, children }) => {
   const user = getUser();
-  return isAuthenticated() && roles.includes(user?.role)
-    ? children
-    : <Navigate to="/login" replace />;
+  if (!isAuthenticated()) {
+    return <Navigate to="/login" replace />;
+  }
+  if (roles && !roles.includes(user?.role)) {
+    const dest = roleHome(user?.role);
+    return <Navigate to={dest} replace />;
+  }
+  return children;
 };
 
 const Admin = ({ children }) => (
-  <Protected roles={["ADMIN", "SUPER_ADMIN"]}>
+  <Protected roles={["ADMIN", "SUPER_ADMIN", "SOCIAL_WORKER"]}>
     <Layout>{children}</Layout>
   </Protected>
 );
@@ -47,21 +52,19 @@ const Parent = ({ children }) => (
   </Protected>
 );
 
-export default function App() {
+const LoginRoute = () => {
   const user = getUser();
+  if (isAuthenticated()) {
+    return <Navigate to={roleHome(user?.role)} replace />;
+  }
+  return <Login />;
+};
+
+export default function App() {
   return (
     <Routes>
       <Route path="/" element={<PublicHome />} />
-      <Route
-        path="/login"
-        element={
-          isAuthenticated() ? (
-            <Navigate to={roleHome(user?.role)} replace />
-          ) : (
-            <Login />
-          )
-        }
-      />
+      <Route path="/login" element={<LoginRoute />} />
       <Route path="/register" element={<Register />} />
       <Route path="/parent/register" element={<ParentRegister />} />
 

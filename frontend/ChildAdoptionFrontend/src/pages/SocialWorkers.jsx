@@ -1,3 +1,211 @@
-import React,{useEffect,useState} from 'react';import {Plus,Edit3,Trash2} from 'lucide-react';import {api,errorMessage} from '../api';import {PageHeader,Card,SearchBox,Status,Loading,Empty,Modal,Button,Field,SelectField,Toast} from '../components/UI';
-const blank={firstName:'',lastName:'',email:'',password:'',phone:'',district:'',area:'',status:'ACTIVE'};
-export default function SocialWorkers(){const [rows,setRows]=useState([]),[loading,setLoading]=useState(true),[search,setSearch]=useState(''),[form,setForm]=useState(blank),[open,setOpen]=useState(false),[editId,setEditId]=useState(null),[toast,setToast]=useState(null);const load=()=>api.get('/social-workers',{params:{search:search||undefined}}).then(r=>setRows(r.data)).catch(e=>setToast({type:'error',message:errorMessage(e)})).finally(()=>setLoading(false));useEffect(load,[]);const save=async e=>{e.preventDefault();try{editId?await api.put(`/social-workers/${editId}`,{firstName:form.firstName,lastName:form.lastName,district:form.district,area:form.area,status:form.status}):await api.post('/social-workers',form);setOpen(false);setToast({message:'Social worker saved'});load()}catch(e){setToast({type:'error',message:errorMessage(e)})}};return <><PageHeader title="Social workers" description="Manage the professionals who support family assessments and home visits." actions={<Button onClick={()=>{setForm(blank);setEditId(null);setOpen(true)}}><Plus/> Add worker</Button>}/><Card><div className="table-tools"><SearchBox value={search} onChange={setSearch}/><Button variant="secondary" onClick={load}>Search</Button></div>{loading?<Loading/>:rows.length?<div className="table-wrap"><table><thead><tr><th>Worker</th><th>Code</th><th>Contact</th><th>Coverage</th><th>Status</th><th></th></tr></thead><tbody>{rows.map(r=><tr key={r.socialWorkerId}><td><div className="person"><div className="avatar">{r.firstName[0]}</div><b>{r.firstName} {r.lastName}</b></div></td><td>{r.socialWorkerCode}</td><td>{r.email}<small>{r.phone}</small></td><td>{r.district||'—'}<small>{r.area}</small></td><td><Status value={r.status}/></td><td><div className="row-actions"><button onClick={()=>{setForm({...r,password:''});setEditId(r.socialWorkerId);setOpen(true)}}><Edit3/></button><button onClick={async()=>{if(confirm('Delete worker?')){await api.delete(`/social-workers/${r.socialWorkerId}`);load()}}}><Trash2/></button></div></td></tr>)}</tbody></table></div>:<Empty/>}</Card><Modal open={open} onClose={()=>setOpen(false)} title={editId?'Edit social worker':'Add social worker'}><form onSubmit={save}><div className="form-grid"><Field label="First name" value={form.firstName} onChange={e=>setForm({...form,firstName:e.target.value})} required/><Field label="Last name" value={form.lastName||''} onChange={e=>setForm({...form,lastName:e.target.value})}/>{!editId&&<><Field label="Email" type="email" value={form.email} onChange={e=>setForm({...form,email:e.target.value})} required/><Field label="Password" type="password" value={form.password} onChange={e=>setForm({...form,password:e.target.value})} required/><Field label="Phone" value={form.phone} onChange={e=>setForm({...form,phone:e.target.value})} required/></>}<Field label="District" value={form.district||''} onChange={e=>setForm({...form,district:e.target.value})}/><Field label="Area" value={form.area||''} onChange={e=>setForm({...form,area:e.target.value})}/>{editId&&<SelectField label="Status" value={form.status} onChange={e=>setForm({...form,status:e.target.value})}><option>ACTIVE</option><option>INACTIVE</option></SelectField>}</div><div className="modal-actions"><Button variant="ghost" type="button" onClick={()=>setOpen(false)}>Cancel</Button><Button>Save</Button></div></form></Modal><Toast toast={toast} onClose={()=>setToast(null)}/></>}
+import React, { useState, useEffect, useMemo } from 'react';
+import { socialWorkerService } from '../services/socialWorkerService';
+import DashboardCards from '../components/DashboardCards';
+import SearchBar from '../components/SearchBar';
+import SocialWorkerTable from '../components/SocialWorkerTable';
+import SocialWorkerForm from '../components/SocialWorkerForm';
+import SocialWorkerDetails from '../components/SocialWorkerDetails';
+import DeleteConfirmation from '../components/DeleteConfirmation';
+import ToastNotification from '../components/ToastNotification';
+
+export default function SocialWorkers() {
+  const [workers, setWorkers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState('ALL');
+
+  // Modal States
+  const [showFormModal, setShowFormModal] = useState(false);
+  const [editWorker, setEditWorker] = useState(null);
+
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [selectedWorker, setSelectedWorker] = useState(null);
+
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [workerToDelete, setWorkerToDelete] = useState(null);
+
+  // Toast Notification State
+  const [toast, setToast] = useState(null);
+
+  const showToast = (type, message) => {
+    setToast({ type, message });
+  };
+
+  // Load workers data from service
+  const loadWorkers = async () => {
+    try {
+      setLoading(true);
+      const data = await socialWorkerService.getAll();
+      setWorkers(data || []);
+    } catch (err) {
+      showToast('error', err.message || 'Failed to load social workers.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadWorkers();
+  }, []);
+
+  // Filtered workers logic (Live Search by Name, Email, Phone + Status filter)
+  const filteredWorkers = useMemo(() => {
+    return workers.filter((worker) => {
+      const query = searchQuery.trim().toLowerCase();
+      const fullName = `${worker.firstName} ${worker.lastName}`.toLowerCase();
+      const email = (worker.email || '').toLowerCase();
+      const phone = (worker.phone || '').toLowerCase();
+
+      const matchesSearch =
+        !query ||
+        fullName.includes(query) ||
+        email.includes(query) ||
+        phone.includes(query);
+
+      const matchesStatus =
+        statusFilter === 'ALL' || worker.status === statusFilter;
+
+      return matchesSearch && matchesStatus;
+    });
+  }, [workers, searchQuery, statusFilter]);
+
+  // Handlers for Add / Edit Modal
+  const handleOpenAddModal = () => {
+    setEditWorker(null);
+    setShowFormModal(true);
+  };
+
+  const handleOpenEditModal = (worker) => {
+    setEditWorker(worker);
+    setShowFormModal(true);
+  };
+
+  const handleSaveWorker = async (formData, isEdit) => {
+    try {
+      if (isEdit && editWorker) {
+        await socialWorkerService.update(editWorker.id, formData);
+        showToast('success', 'Social Worker updated successfully!');
+      } else {
+        await socialWorkerService.add(formData);
+        showToast('success', 'Social Worker added successfully!');
+      }
+      setShowFormModal(false);
+      loadWorkers();
+    } catch (err) {
+      showToast('error', err.message || 'Error saving Social Worker.');
+    }
+  };
+
+  // Handlers for View Details Modal
+  const handleOpenViewModal = (worker) => {
+    setSelectedWorker(worker);
+    setShowDetailsModal(true);
+  };
+
+  // Handler for Activate / Deactivate Toggle
+  const handleToggleStatus = async (worker) => {
+    try {
+      if (worker.status === 'ACTIVE') {
+        await socialWorkerService.deactivate(worker.id);
+        showToast('warning', `Social Worker ${worker.firstName} deactivated.`);
+      } else {
+        await socialWorkerService.activate(worker.id);
+        showToast('success', `Social Worker ${worker.firstName} activated.`);
+      }
+      loadWorkers();
+    } catch (err) {
+      showToast('error', err.message || 'Failed to update status.');
+    }
+  };
+
+  // Handlers for Delete Modal
+  const handleOpenDeleteModal = (worker) => {
+    setWorkerToDelete(worker);
+    setShowDeleteModal(true);
+  };
+
+  const handleConfirmDelete = async (worker) => {
+    if ((worker.pendingVisits || 0) > 0) {
+      showToast('warning', `Cannot delete worker with pending visits (${worker.pendingVisits}).`);
+      setShowDeleteModal(false);
+      return;
+    }
+
+    try {
+      await socialWorkerService.delete(worker.id);
+      showToast('success', `Social Worker ${worker.firstName} ${worker.lastName} deleted successfully!`);
+      setShowDeleteModal(false);
+      setWorkerToDelete(null);
+      loadWorkers();
+    } catch (err) {
+      showToast('error', err.message || 'Failed to delete social worker.');
+    }
+  };
+
+  return (
+    <div className="container-fluid px-0">
+      {/* Page Header */}
+      <div className="d-flex align-items-center justify-content-between mb-4">
+        <div>
+          <span className="eyebrow text-uppercase fw-bold text-primary small d-block mb-1">
+            Admin Management
+          </span>
+          <h2 className="h3 fw-bold text-dark mb-0">Social Worker Management</h2>
+          <p className="text-muted small mb-0 mt-1">
+            Manage social worker profiles, coverage areas, and field visit assignments.
+          </p>
+        </div>
+      </div>
+
+      {/* 1. Dashboard Cards */}
+      <DashboardCards workers={workers} />
+
+      {/* 2. Search & Filter Bar */}
+      <SearchBar
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
+        statusFilter={statusFilter}
+        onFilterChange={setStatusFilter}
+        onAddClick={handleOpenAddModal}
+      />
+
+      {/* 3. Social Worker Table */}
+      <SocialWorkerTable
+        workers={filteredWorkers}
+        loading={loading}
+        onView={handleOpenViewModal}
+        onEdit={handleOpenEditModal}
+        onToggleStatus={handleToggleStatus}
+        onDelete={handleOpenDeleteModal}
+      />
+
+      {/* Modals */}
+      {/* Add / Edit Form Modal */}
+      <SocialWorkerForm
+        show={showFormModal}
+        editWorker={editWorker}
+        existingWorkers={workers}
+        onClose={() => setShowFormModal(false)}
+        onSave={handleSaveWorker}
+      />
+
+      {/* View Worker Details Modal */}
+      <SocialWorkerDetails
+        show={showDetailsModal}
+        worker={selectedWorker}
+        onClose={() => setShowDetailsModal(false)}
+      />
+
+      {/* Delete Confirmation Modal */}
+      <DeleteConfirmation
+        show={showDeleteModal}
+        worker={workerToDelete}
+        onClose={() => setShowDeleteModal(false)}
+        onConfirm={handleConfirmDelete}
+      />
+
+      {/* Toast Notification */}
+      <ToastNotification toast={toast} onClose={() => setToast(null)} />
+    </div>
+  );
+}
