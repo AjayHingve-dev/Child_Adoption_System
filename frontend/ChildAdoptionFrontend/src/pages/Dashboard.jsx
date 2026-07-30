@@ -1,0 +1,153 @@
+import React, { useEffect, useState } from "react";
+import {
+  Users,
+  Baby,
+  ClipboardList,
+  House,
+  TrendingUp,
+  ArrowUpRight,
+  HeartHandshake,
+} from "lucide-react";
+import { api } from "../api";
+import { PageHeader, Card, Loading, Status } from "../components/UI";
+export default function Dashboard() {
+  const [stats, setStats] = useState(null);
+  const [activity, setActivity] = useState([]);
+  useEffect(() => {
+    Promise.all([
+      api.get("/dashboard/stats"),
+      api.get("/dashboard/recent-activity"),
+    ])
+      .then(([a, b]) => {
+        setStats(a.data);
+        setActivity(Array.isArray(b.data) ? b.data : []);
+      })
+      .catch(() =>
+        setStats({
+          totalParents: 0,
+          totalChildren: 0,
+          totalApplications: 0,
+          pendingHomeVisits: 0,
+          approvedApplications: 0,
+          rejectedApplications: 0,
+          underReviewApplications: 0,
+          completedHomeVisits: 0,
+        }),
+      );
+  }, []);
+  if (!stats) return <Loading />;
+  const cards = [
+    [Users, "Total Parents", stats.totalParents, "Registered families"],
+    [Baby, "Children", stats.totalChildren, "In the system"],
+    [
+      ClipboardList,
+      "Applications",
+      stats.totalApplications,
+      "Across all stages",
+    ],
+    [House, "Pending Visits", stats.pendingHomeVisits, "Require coordination"],
+  ];
+  return (
+    <>
+      <PageHeader
+        eyebrow="Overview"
+        title="Good to see you"
+        description="Here is what is happening across the adoption program today."
+        actions={<button className="date-chip">July 20, 2026</button>}
+      />
+      <div className="stat-grid">
+        {cards.map(([Icon, label, value, note], i) => (
+          <Card className={`stat-card tone-${i}`} key={label}>
+            <div className="stat-icon">
+              <Icon />
+            </div>
+            <div>
+              <span>{label}</span>
+              <strong>{value}</strong>
+              <small>{note}</small>
+            </div>
+            <ArrowUpRight className="stat-arrow" />
+          </Card>
+        ))}
+      </div>
+      <div className="dashboard-grid">
+        <Card className="journey-card">
+          <div className="card-title">
+            <div>
+              <span className="eyebrow">Application pipeline</span>
+              <h2>Adoption journey</h2>
+            </div>
+            <TrendingUp />
+          </div>
+          <div className="pipeline">
+            <div>
+              <b>{stats.underReviewApplications}</b>
+              <span>Under review</span>
+              <i
+                style={{
+                  width: `${Math.min(100, stats.underReviewApplications * 10 + 15)}%`,
+                }}
+              />
+            </div>
+            <div>
+              <b>{stats.approvedApplications}</b>
+              <span>Approved</span>
+              <i
+                style={{
+                  width: `${Math.min(100, stats.approvedApplications * 10 + 15)}%`,
+                }}
+              />
+            </div>
+            <div>
+              <b>{stats.rejectedApplications}</b>
+              <span>Rejected</span>
+              <i
+                style={{
+                  width: `${Math.min(100, stats.rejectedApplications * 10 + 15)}%`,
+                }}
+              />
+            </div>
+            <div>
+              <b>{stats.completedHomeVisits}</b>
+              <span>Visits completed</span>
+              <i
+                style={{
+                  width: `${Math.min(100, stats.completedHomeVisits * 10 + 15)}%`,
+                }}
+              />
+            </div>
+          </div>
+        </Card>
+        <Card>
+          <div className="card-title">
+            <div>
+              <span className="eyebrow">Latest updates</span>
+              <h2>Recent activity</h2>
+            </div>
+            <HeartHandshake />
+          </div>
+          <div className="activity-list">
+            {activity.length ? (
+              activity.slice(0, 6).map((a, i) => (
+                <div key={i}>
+                  <div className="activity-dot" />
+                  <div>
+                    <strong>{a.title || a.type || "System activity"}</strong>
+                    <p>
+                      {a.description || a.message || "A record was updated."}
+                    </p>
+                  </div>
+                  <Status value={a.status || "UPDATED"} />
+                </div>
+              ))
+            ) : (
+              <div className="empty compact">
+                <p>No recent activity yet.</p>
+              </div>
+            )}
+          </div>
+        </Card>
+      </div>
+    </>
+  );
+}

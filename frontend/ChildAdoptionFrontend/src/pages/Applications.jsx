@@ -1,0 +1,319 @@
+import React, { useEffect, useState } from "react";
+import { Eye, FileText, Home, UserRound, Heart } from "lucide-react";
+import { api, errorMessage } from "../api";
+import {
+  PageHeader,
+  Card,
+  SearchBox,
+  Status,
+  Loading,
+  Empty,
+  Modal,
+  Button,
+  SelectField,
+  TextareaField,
+  Toast,
+} from "../components/UI";
+
+export default function Applications() {
+  const [rows, setRows] = useState([]),
+    [loading, setLoading] = useState(true),
+    [detailLoading, setDetailLoading] = useState(false),
+    [search, setSearch] = useState(""),
+    [filter, setFilter] = useState(""),
+    [selected, setSelected] = useState(null),
+    [review, setReview] = useState({ status: "UNDER_REVIEW", adminRemark: "" }),
+    [toast, setToast] = useState(null);
+  const load = () => {
+    setLoading(true);
+    api
+      .get("/applications", {
+        params: { search: search || undefined, status: filter || undefined },
+      })
+      .then((r) => setRows(r.data))
+      .catch((e) => setToast({ type: "error", message: errorMessage(e) }))
+      .finally(() => setLoading(false));
+  };
+  useEffect(load, []);
+  const openDetails = async (id) => {
+    setDetailLoading(true);
+    setSelected({ loading: true });
+    try {
+      const data = (await api.get(`/applications/${id}`)).data;
+      setSelected(data);
+      setReview({
+        status: ["APPROVED", "REJECTED", "UNDER_REVIEW"].includes(
+          data.application.status,
+        )
+          ? data.application.status
+          : "UNDER_REVIEW",
+        adminRemark: data.application.adminRemark || "",
+      });
+    } catch (e) {
+      setSelected(null);
+      setToast({ type: "error", message: errorMessage(e) });
+    } finally {
+      setDetailLoading(false);
+    }
+  };
+  const submit = async () => {
+    try {
+      await api.put(
+        `/applications/${selected.application.requestId}/review`,
+        review,
+      );
+      setToast({ message: "Application reviewed successfully" });
+      setSelected(null);
+      load();
+    } catch (e) {
+      setToast({ type: "error", message: errorMessage(e) });
+    }
+  };
+  return (
+    <>
+      <PageHeader
+        title="Adoption applications"
+        description="Review parents, children, documents, home visits, and final decisions."
+      />
+      <Card>
+        <div className="table-tools">
+          <SearchBox
+            value={search}
+            onChange={setSearch}
+            placeholder="Application, parent or child"
+          />
+          <select
+            className="filter-select"
+            value={filter}
+            onChange={(e) => setFilter(e.target.value)}
+          >
+            <option value="">All statuses</option>
+            <option>PENDING</option>
+            <option>HOME_VISIT_ASSIGNED</option>
+            <option>UNDER_REVIEW</option>
+            <option>APPROVED</option>
+            <option>REJECTED</option>
+          </select>
+          <Button variant="secondary" onClick={load}>
+            Apply filters
+          </Button>
+        </div>
+        {loading ? (
+          <Loading />
+        ) : rows.length ? (
+          <div className="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Application</th>
+                  <th>Parent</th>
+                  <th>Child</th>
+                  <th>Submitted</th>
+                  <th>Status</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {rows.map((r) => (
+                  <tr key={r.requestId}>
+                    <td>
+                      <b>{r.applicationNumber}</b>
+                      <small>#{r.requestId}</small>
+                    </td>
+                    <td>
+                      {r.parentName}
+                      <small>Parent #{r.userId}</small>
+                    </td>
+                    <td>
+                      {r.childName}
+                      <small>Child #{r.childId}</small>
+                    </td>
+                    <td>
+                      {new Date(r.requestDate).toLocaleDateString("en-IN")}
+                    </td>
+                    <td>
+                      <Status value={r.status} />
+                    </td>
+                    <td>
+                      <button
+                        className="icon-btn"
+                        title="View application"
+                        onClick={() => openDetails(r.requestId)}
+                      >
+                        <Eye size={17} />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <Empty />
+        )}
+      </Card>
+      <Modal
+        open={!!selected}
+        onClose={() => setSelected(null)}
+        title={
+          selected?.application?.applicationNumber || "Application details"
+        }
+        wide
+      >
+        {detailLoading || selected?.loading ? (
+          <Loading />
+        ) : (
+          selected && (
+            <>
+              <div className="application-detail-head">
+                <div>
+                  <span>Current status</span>
+                  <Status value={selected.application.status} />
+                </div>
+                <div>
+                  <span>Submitted</span>
+                  <b>
+                    {new Date(
+                      selected.application.requestDate,
+                    ).toLocaleDateString("en-IN")}
+                  </b>
+                </div>
+              </div>
+              <div className="application-sections">
+                <section>
+                  <h3>
+                    <UserRound size={18} /> Parent details
+                  </h3>
+                  <div className="detail-grid compact">
+                    {[
+                      [
+                        "Name",
+                        `${selected.parent.firstName} ${selected.parent.lastName || ""}`,
+                      ],
+                      ["Email", selected.parent.email],
+                      ["Phone", selected.parent.phone],
+                      ["Occupation", selected.parent.occupation],
+                      ["Annual income", selected.parent.annualIncome],
+                      [
+                        "Address",
+                        [
+                          selected.parent.address,
+                          selected.parent.city,
+                          selected.parent.state,
+                          selected.parent.pincode,
+                        ]
+                          .filter(Boolean)
+                          .join(", "),
+                      ],
+                    ].map(([k, v]) => (
+                      <div key={k}>
+                        <span>{k}</span>
+                        <b>{v || "—"}</b>
+                      </div>
+                    ))}
+                  </div>
+                </section>
+                <section>
+                  <h3>
+                    <Heart size={18} /> Child details
+                  </h3>
+                  <div className="detail-grid compact">
+                    {[
+                      [
+                        "Name",
+                        `${selected.child.firstName} ${selected.child.lastName || ""}`,
+                      ],
+                      ["Age", selected.child.age],
+                      ["Gender", selected.child.gender],
+                      ["Blood group", selected.child.bloodGroup],
+                      ["Health status", selected.child.healthStatus],
+                      ["Child status", selected.child.status],
+                    ].map(([k, v]) => (
+                      <div key={k}>
+                        <span>{k}</span>
+                        <b>{v ?? "—"}</b>
+                      </div>
+                    ))}
+                  </div>
+                </section>
+                <section>
+                  <h3>
+                    <FileText size={18} /> Parent documents
+                  </h3>
+                  {selected.documents.length ? (
+                    <div className="detail-list">
+                      {selected.documents.map((d) => (
+                        <div key={d.documentId}>
+                          <b>{d.documentType}</b>
+                          <span>
+                            {d.fileName} · {d.verificationStatus}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="muted-text">
+                      No documents uploaded for this application.
+                    </p>
+                  )}
+                </section>
+                <section>
+                  <h3>
+                    <Home size={18} /> Home visits
+                  </h3>
+                  {selected.homeVisits.length ? (
+                    <div className="detail-list">
+                      {selected.homeVisits.map((v) => (
+                        <div key={v.homeVisitId}>
+                          <b>
+                            {v.visitCode} · {v.status}
+                          </b>
+                          <span>
+                            {v.socialWorkerName} ·{" "}
+                            {new Date(v.scheduledDate).toLocaleDateString(
+                              "en-IN",
+                            )}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="muted-text">No home visit assigned.</p>
+                  )}
+                </section>
+              </div>
+              <div className="review-panel">
+                <SelectField
+                  label="Decision status"
+                  value={review.status}
+                  onChange={(e) =>
+                    setReview({ ...review, status: e.target.value })
+                  }
+                >
+                  <option>UNDER_REVIEW</option>
+                  <option>APPROVED</option>
+                  <option>REJECTED</option>
+                </SelectField>
+                <TextareaField
+                  label="Administrator remark"
+                  rows="4"
+                  value={review.adminRemark}
+                  onChange={(e) =>
+                    setReview({ ...review, adminRemark: e.target.value })
+                  }
+                />
+                <div className="modal-actions">
+                  <Button variant="ghost" onClick={() => setSelected(null)}>
+                    Cancel
+                  </Button>
+                  <Button onClick={submit}>Save review</Button>
+                </div>
+              </div>
+            </>
+          )
+        )}
+      </Modal>
+      <Toast toast={toast} onClose={() => setToast(null)} />
+    </>
+  );
+}

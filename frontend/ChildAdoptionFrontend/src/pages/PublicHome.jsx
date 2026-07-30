@@ -1,0 +1,149 @@
+import React from "react";
+import { Link } from "react-router-dom";
+import {
+  HeartHandshake,
+  ShieldCheck,
+  Users,
+  Home,
+  FileCheck,
+  Phone,
+  HelpCircle,
+} from "lucide-react";
+import { children } from "../data/mockData";
+export default function PublicHome() {
+  return (
+    <div className="public-site">
+      <header className="public-nav">
+        <Link to="/" className="public-brand">
+          <div className="brand-mark">
+            <HeartHandshake />
+          </div>
+          <b>Aashray</b>
+        </Link>
+        <nav>
+          <a href="#about">About Us</a>
+          <a href="#process">Adoption Process</a>
+          <a href="#children">Available Children</a>
+          <a href="#faq">FAQs</a>
+          <a href="#contact">Contact</a>
+        </nav>
+        <div>
+          <Link className="btn ghost" to="/login">
+            Login
+          </Link>
+          <Link className="btn primary" to="/parent/register">
+            Register
+          </Link>
+        </div>
+      </header>
+      <main>
+        <section className="hero-public">
+          <div>
+            <span className="eyebrow">A safe path to parenthood</span>
+            <h1>Bringing children and loving families together.</h1>
+            <p>
+              Aashray provides a transparent, secure and compassionate adoption
+              journey for parents, social workers and administrators.
+            </p>
+            <div className="hero-actions">
+              <Link className="btn primary" to="/parent/register">
+                Begin registration
+              </Link>
+              <a className="btn secondary" href="#process">
+                View adoption process
+              </a>
+            </div>
+          </div>
+          <div className="hero-public-card">
+            <HeartHandshake />
+            <h3>Every child deserves care, safety and belonging.</h3>
+            <p>
+              Track every step from registration through home study and final
+              adoption record.
+            </p>
+          </div>
+        </section>
+        <section id="about" className="public-section">
+          <span className="eyebrow">About us</span>
+          <h2>Responsible adoption with clarity</h2>
+          <p>
+            We connect eligible parents with children through verified
+            documentation, careful application review and professional
+            home-study support.
+          </p>
+        </section>
+        <section id="process" className="public-section muted">
+          <span className="eyebrow">Adoption process</span>
+          <h2>Four simple stages</h2>
+          <div className="process-grid">
+            {[
+              [Users, "Register & complete profile"],
+              [FileCheck, "Upload and verify documents"],
+              [Home, "Home visit and study report"],
+              [ShieldCheck, "Final decision and record"],
+            ].map(([Icon, t], i) => (
+              <article key={t}>
+                <i>{i + 1}</i>
+                <Icon />
+                <h3>{t}</h3>
+              </article>
+            ))}
+          </div>
+        </section>
+        <section id="children" className="public-section">
+          <span className="eyebrow">Available children</span>
+          <h2>Children waiting for a family</h2>
+          <div className="public-children">
+            {children.slice(0, 3).map((c) => (
+              <article key={c.childId}>
+                <img src={c.profilePhoto} />
+                <div>
+                  <h3>{c.firstName}</h3>
+                  <p>
+                    {c.age} years · {c.gender}
+                  </p>
+                </div>
+              </article>
+            ))}
+          </div>
+          <Link className="btn secondary" to="/login">
+            Login to view full details
+          </Link>
+        </section>
+        <section id="faq" className="public-section muted">
+          <span className="eyebrow">FAQs</span>
+          <h2>Common questions</h2>
+          <details>
+            <summary>Who can apply for adoption?</summary>
+            <p>
+              Eligible parents may register, complete their profile and submit
+              the required documents for verification.
+            </p>
+          </details>
+          <details>
+            <summary>Can I track my application?</summary>
+            <p>
+              Yes. The parent dashboard shows application status, home visit
+              schedule and the final decision.
+            </p>
+          </details>
+          <details>
+            <summary>What happens during a home visit?</summary>
+            <p>
+              An assigned social worker assesses the home environment, financial
+              stability, family support and child safety.
+            </p>
+          </details>
+        </section>
+        <section id="contact" className="public-section contact-public">
+          <Phone />
+          <div>
+            <span className="eyebrow">Contact us</span>
+            <h2>Need help with your application?</h2>
+            <p>Email support@aashray.demo or call +91 1800 123 456.</p>
+          </div>
+        </section>
+      </main>
+    </div>
+  );
+}
