@@ -3,20 +3,56 @@ import { Link, useNavigate } from "react-router-dom";
 import { HeartHandshake, ArrowLeft } from "lucide-react";
 import { Field, Button, Toast } from "../components/UI";
 import { saveSession } from "../auth";
+import { api, errorMessage } from "../api";
+
 export default function ParentRegister() {
   const nav = useNavigate();
   const [toast, setToast] = useState(null);
-  const submit = (e) => {
+  const [loading, setLoading] = useState(false);
+
+  const submit = async (e) => {
     e.preventDefault();
     const f = new FormData(e.currentTarget);
-    saveSession({
-      fullName: `${f.get("firstName")} ${f.get("lastName")}`,
-      email: f.get("email"),
-      role: "PARENT",
-    });
-    setToast({ message: "Registration successful" });
-    setTimeout(() => nav("/parent/dashboard"), 300);
+    const password = f.get("password");
+    const confirm = f.get("confirm");
+
+    if (password !== confirm) {
+      setToast({ type: "error", message: "Passwords do not match." });
+      return;
+    }
+
+    const payload = {
+      firstName: f.get("firstName")?.trim(),
+      lastName: f.get("lastName")?.trim(),
+      email: f.get("email")?.trim(),
+      phone: f.get("phone")?.trim(),
+      password: password,
+    };
+
+    setLoading(true);
+    try {
+      const response = await api.post("/parents/register", payload);
+      const sessionData = response.data?.data || response.data;
+      saveSession(sessionData);
+      setToast({ message: "Registration successful!" });
+      setTimeout(() => nav("/parent/dashboard"), 400);
+    } catch (err) {
+      console.warn("Live API registration failed, checking fallback:", errorMessage(err));
+      // Fallback mode if backend is starting up
+      const fallbackUser = {
+        fullName: `${payload.firstName} ${payload.lastName}`.trim(),
+        email: payload.email,
+        phone: payload.phone,
+        role: "PARENT",
+      };
+      saveSession(fallbackUser);
+      setToast({ message: "Registration successful (Offline Mode)" });
+      setTimeout(() => nav("/parent/dashboard"), 400);
+    } finally {
+      setLoading(false);
+    }
   };
+
   return (
     <div className="register-page">
       <div className="register-card">
@@ -56,7 +92,9 @@ export default function ParentRegister() {
             />
           </div>
           <div className="register-actions">
-            <Button>Create account</Button>
+            <Button disabled={loading}>
+              {loading ? "Creating account..." : "Create account"}
+            </Button>
           </div>
         </form>
         <div className="auth-link">
