@@ -1,0 +1,15 @@
+# Sensitive Configuration & Credentials
+**/application.properties
+**/application-*.properties
+**/application.yml
+**/application-*.yml
+**/appsettings.json
+**/appsettings.Development.json
+**/appsettings*.json
+
+# Build Outputs
+**/target/
+**/bin/
+**/obj/
+**/dist/
+**/node_modules/
