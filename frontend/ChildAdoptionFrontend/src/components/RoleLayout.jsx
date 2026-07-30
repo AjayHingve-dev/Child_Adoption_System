@@ -4,7 +4,10 @@ import {
   HeartHandshake,
   LayoutDashboard,
   UserRound,
+  FileText,
+  Baby,
   ClipboardList,
+  House,
   LogOut,
   Menu,
   X,
@@ -13,8 +16,8 @@ import {
   BookOpen,
   Contact,
   KeyRound,
-  Baby,
 } from "lucide-react";
+
 import { clearSession, getUser } from "../auth";
 
 const parentLinks = [
@@ -28,47 +31,143 @@ const parentLinks = [
   ["/parent/security", KeyRound, "Change Password"],
 ];
 
-export default function RoleLayout({ children }) {
+const workerLinks = [
+  ["/worker/dashboard", LayoutDashboard, "Dashboard"],
+  ["/worker/applications", ClipboardList, "Assigned Applications"],
+  ["/worker/visits", House, "Home Visits"],
+  ["/worker/reports", FileText, "Submitted Reports"],
+  ["/worker/profile", UserRound, "My Profile"],
+  ["/worker/security", KeyRound, "Change Password"],
+];
+
+export default function RoleLayout({ children, role }) {
   const [open, setOpen] = useState(false);
-  const nav = useNavigate();
+  const navigate = useNavigate();
   const user = getUser();
+
+  const isWorker = role === "SOCIAL_WORKER";
+  const links = isWorker ? workerLinks : parentLinks;
+
   const logout = () => {
     clearSession();
-    nav("/login", { replace: true });
+    navigate("/login", { replace: true });
   };
 
   return (
     <div className="app-shell">
       <aside className={`sidebar ${open ? "open" : ""}`}>
         <div className="brand">
-          <div className="brand-mark"><HeartHandshake /></div>
-          <div><b>Aashray</b><small>Parent Portal</small></div>
-          <button className="mobile-close" onClick={() => setOpen(false)}><X /></button>
+          <div className="brand-mark">
+            <HeartHandshake />
+          </div>
+
+          <div>
+            <b>Aashray</b>
+
+            <small>
+              {isWorker ? "Social Worker Portal" : "Parent Portal"}
+            </small>
+          </div>
+
+          <button
+            className="mobile-close"
+            onClick={() => setOpen(false)}
+          >
+            <X />
+          </button>
         </div>
+
         <nav>
-          {parentLinks.map(([to, Icon, label]) => (
-            <NavLink key={to} to={to} onClick={() => setOpen(false)} className={({ isActive }) => (isActive ? "active" : "")}>
-              <Icon size={19} /><span>{label}</span>
+          {links.map(([to, Icon, label]) => (
+            <NavLink
+              key={to}
+              to={to}
+              onClick={() => setOpen(false)}
+              className={({ isActive }) =>
+                isActive ? "active" : ""
+              }
+            >
+              <Icon size={19} />
+              <span>{label}</span>
             </NavLink>
           ))}
         </nav>
+
         <div className="sidebar-foot">
-          <NavLink to="/parent/profile" className="mini-profile profile-link">
-            <div className="avatar">{user?.fullName?.[0] || "U"}</div>
-            <div><strong>{user?.fullName || "User"}</strong><small>PARENT</small></div>
+          <NavLink
+            to={
+              isWorker
+                ? "/worker/profile"
+                : "/parent/profile"
+            }
+            className="mini-profile profile-link"
+          >
+            <div className="avatar">
+              {user?.fullName?.[0] || "U"}
+            </div>
+
+            <div>
+              <strong>
+                {user?.fullName || "User"}
+              </strong>
+
+              <small>
+                {isWorker
+                  ? "SOCIAL WORKER"
+                  : "PARENT"}
+              </small>
+            </div>
           </NavLink>
-          <button className="logout" onClick={logout}><LogOut size={18} /> Sign out</button>
+
+          <button
+            className="logout"
+            onClick={logout}
+          >
+            <LogOut size={18} />
+            Sign out
+          </button>
         </div>
       </aside>
+
       <main className="main">
         <header className="topbar">
-          <button className="menu-btn" onClick={() => setOpen(true)}><Menu /></button>
-          <div className="top-title"><ShieldCheck size={19} /><span>Secure adoption journey portal</span></div>
-          <div className="top-user"><span>{user?.email}</span><div className="avatar small">{user?.fullName?.[0] || "U"}</div></div>
+          <button
+            className="menu-btn"
+            onClick={() => setOpen(true)}
+          >
+            <Menu />
+          </button>
+
+          <div className="top-title">
+            <ShieldCheck size={19} />
+
+            <span>
+              {isWorker
+                ? "Secure field-work portal"
+                : "Secure adoption journey portal"}
+            </span>
+          </div>
+
+          <div className="top-user">
+            <span>{user?.email}</span>
+
+            <div className="avatar small">
+              {user?.fullName?.[0] || "U"}
+            </div>
+          </div>
         </header>
-        <div className="content">{children}</div>
+
+        <div className="content">
+          {children}
+        </div>
       </main>
-      {open && <div className="scrim" onClick={() => setOpen(false)} />}
+
+      {open && (
+        <div
+          className="scrim"
+          onClick={() => setOpen(false)}
+        />
+      )}
     </div>
   );
 }

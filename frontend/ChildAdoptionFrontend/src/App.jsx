@@ -26,6 +26,14 @@ import {
   ParentContact,
   SecurityPage,
 } from "./pages/ParentPages";
+
+import {
+  WorkerDashboard,
+  WorkerApplications,
+  WorkerVisits,
+  WorkerReports,
+  WorkerProfile,
+} from "./pages/WorkerPages";
 import { getUser, isAuthenticated, roleHome } from "./auth";
 
 const Protected = ({ roles, children }) => {
@@ -41,14 +49,20 @@ const Protected = ({ roles, children }) => {
 };
 
 const Admin = ({ children }) => (
-  <Protected roles={["ADMIN", "SUPER_ADMIN", "SOCIAL_WORKER"]}>
+  <Protected roles={["ADMIN", "SUPER_ADMIN"]}>
     <Layout>{children}</Layout>
   </Protected>
 );
 
 const Parent = ({ children }) => (
   <Protected roles={["PARENT", "USER"]}>
-    <RoleLayout>{children}</RoleLayout>
+    <RoleLayout role="PARENT">{children}</RoleLayout>
+  </Protected>
+);
+
+const Worker = ({ children }) => (
+  <Protected roles={["SOCIAL_WORKER"]}>
+    <RoleLayout role="SOCIAL_WORKER">{children}</RoleLayout>
   </Protected>
 );
 
@@ -87,14 +101,123 @@ export default function App() {
         />
       ))}
 
-      <Route path="/parent/dashboard" element={<Parent><ParentDashboard /></Parent>} />
-      <Route path="/parent/profile" element={<Parent><ParentProfile /></Parent>} />
-      <Route path="/parent/documents" element={<Parent><ParentDocuments /></Parent>} />
-      <Route path="/parent/children" element={<Parent><ParentChildren /></Parent>} />
-      <Route path="/parent/applications" element={<Parent><ParentApplications /></Parent>} />
-      <Route path="/parent/adoption-record" element={<Parent><AdoptionRecord /></Parent>} />
-      <Route path="/parent/contact" element={<Parent><ParentContact /></Parent>} />
-      <Route path="/parent/security" element={<Parent><SecurityPage /></Parent>} />
+      <Route
+        path="/parent/dashboard"
+        element={
+          <Parent>
+            <ParentDashboard />
+          </Parent>
+        }
+      />
+      <Route
+        path="/parent/profile"
+        element={
+          <Parent>
+            <ParentProfile />
+          </Parent>
+        }
+      />
+      <Route
+        path="/parent/documents"
+        element={
+          <Parent>
+            <ParentDocuments />
+          </Parent>
+        }
+      />
+      <Route
+        path="/parent/children"
+        element={
+          <Parent>
+            <ParentChildren />
+          </Parent>
+        }
+      />
+      <Route
+        path="/parent/applications"
+        element={
+          <Parent>
+            <ParentApplications />
+          </Parent>
+        }
+      />
+      <Route
+        path="/parent/adoption-record"
+        element={
+          <Parent>
+            <AdoptionRecord />
+          </Parent>
+        }
+      />
+      <Route
+        path="/parent/contact"
+        element={
+          <Parent>
+            <ParentContact />
+          </Parent>
+        }
+      />
+      <Route
+        path="/parent/security"
+        element={
+          <Parent>
+            <SecurityPage />
+          </Parent>
+        }
+      />
+      <Route
+        path="/worker/dashboard"
+        element={
+          <Worker>
+            <WorkerDashboard />
+          </Worker>
+        }
+      />
+
+      <Route
+        path="/worker/applications"
+        element={
+          <Worker>
+            <WorkerApplications />
+          </Worker>
+        }
+      />
+
+      <Route
+        path="/worker/visits"
+        element={
+          <Worker>
+            <WorkerVisits />
+          </Worker>
+        }
+      />
+
+      <Route
+        path="/worker/reports"
+        element={
+          <Worker>
+            <WorkerReports />
+          </Worker>
+        }
+      />
+
+      <Route
+        path="/worker/profile"
+        element={
+          <Worker>
+            <WorkerProfile />
+          </Worker>
+        }
+      />
+
+      <Route
+        path="/worker/security"
+        element={
+          <Worker>
+            <SecurityPage />
+          </Worker>
+        }
+      />
 
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

@@ -39,12 +39,23 @@ export const clearSession = () => {
 
 export const isAuthenticated = () => !!localStorage.getItem('token') && !!getUser();
 
-export const roleHome = (role) =>
-  ['ADMIN', 'SUPER_ADMIN', 'SOCIAL_WORKER'].includes(role)
-    ? '/dashboard'
-    : '/parent/dashboard';
+export const roleHome = (role) => {
+  if (["ADMIN", "SUPER_ADMIN"].includes(role)) {
+    return "/dashboard";
+  }
+
+  if (role === "SOCIAL_WORKER") {
+    return "/worker/dashboard";
+  }
+
+  return "/parent/dashboard";
+};
 
 export const isAdminSession = () => {
   const user = getUser();
-  return isAuthenticated() && ['ADMIN', 'SUPER_ADMIN', 'SOCIAL_WORKER'].includes(user?.role);
+
+  return (
+    isAuthenticated() &&
+    ["ADMIN", "SUPER_ADMIN"].includes(user?.role)
+  );
 };
