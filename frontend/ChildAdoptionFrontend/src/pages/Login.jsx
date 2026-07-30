@@ -20,7 +20,8 @@ export default function Login() {
     setLoading(true);
     setError("");
     try {
-      const { data } = await api.post("/auth/login", { ...form, role });
+      const targetBaseUrl = role === "PARENT" ? "http://localhost:8082/api" : "http://localhost:5080/api";
+      const { data } = await api.post("/auth/login", { ...form, role }, { baseURL: targetBaseUrl });
       saveSession(data);
       nav(roleHome(data.role), { replace: true });
     } catch (err) {

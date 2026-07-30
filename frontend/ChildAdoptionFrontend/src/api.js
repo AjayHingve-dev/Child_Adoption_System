@@ -1,13 +1,24 @@
 import axios from 'axios';
 
+const ADMIN_API_URL = import.meta.env.VITE_ADMIN_API_URL || 'http://localhost:5080/api';
+const PARENT_API_URL = import.meta.env.VITE_PARENT_API_URL || 'http://localhost:8082/api';
+
 export const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5080/api',
+  baseURL: ADMIN_API_URL,
   headers: { 'Content-Type': 'application/json' }
 });
 
 api.interceptors.request.use(config => {
   const token = localStorage.getItem('token');
-  if (token) config.headers.Authorization = `Bearer ${token}`;
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+
+  // Route requests dynamically based on module path
+  if (config.url && (config.url.startsWith('/parents') || config.url.startsWith('/parent'))) {
+    config.baseURL = PARENT_API_URL;
+  }
+
   return config;
 });
 
