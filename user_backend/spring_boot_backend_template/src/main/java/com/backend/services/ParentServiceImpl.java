@@ -13,10 +13,13 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.backend.dto.AuthResponse;
 import com.backend.dto.LoginRequest;
+import com.backend.dto.ParentProfileResponse;
+import com.backend.dto.ParentProfileUpdateRequest;
 import com.backend.dto.ParentRegisterRequest;
 import com.backend.entity.User;
 import com.backend.entity.UserStatus;
 import com.backend.exception.ConflictException;
+import com.backend.exception.ResourceNotFoundException;
 import com.backend.repository.UserRepository;
 import com.backend.security.JwtUtils;
 
@@ -88,7 +91,7 @@ public class ParentServiceImpl implements ParentService {
         SecurityContextHolder.getContext().setAuthentication(authentication);
 
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new ConflictException("User not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("User profile not found."));
 
         String token = jwtUtils.generateToken(authentication);
         String fullName = (user.getFirstName() + " " + (user.getLastName() != null ? user.getLastName() : "")).trim();
@@ -103,6 +106,75 @@ public class ParentServiceImpl implements ParentService {
                 .email(user.getEmail())
                 .phone(user.getPhone())
                 .role("PARENT")
+                .build();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public ParentProfileResponse getParentProfile(String email) {
+        User user = userRepository.findByEmail(email.trim().toLowerCase())
+                .orElseThrow(() -> new ResourceNotFoundException("Parent profile not found."));
+
+        return mapToProfileResponse(user);
+    }
+
+    @Override
+    public ParentProfileResponse updateParentProfile(String email, ParentProfileUpdateRequest request) {
+        User user = userRepository.findByEmail(email.trim().toLowerCase())
+                .orElseThrow(() -> new ResourceNotFoundException("Parent profile not found."));
+
+        if (request.getPhone() != null && !request.getPhone().trim().equals(user.getPhone())) {
+            if (userRepository.existsByPhone(request.getPhone().trim())) {
+                throw new ConflictException("Phone number is already used by another user account.");
+            }
+            user.setPhone(request.getPhone().trim());
+        }
+
+        if (request.getAadhaarNumber() != null && !request.getAadhaarNumber().trim().isEmpty() &&
+            !request.getAadhaarNumber().trim().equals(user.getAadhaarNumber())) {
+            if (userRepository.existsByAadhaarNumber(request.getAadhaarNumber().trim())) {
+                throw new ConflictException("Aadhaar number is already registered.");
+            }
+            user.setAadhaarNumber(request.getAadhaarNumber().trim());
+        }
+
+        user.setFirstName(request.getFirstName().trim());
+        if (request.getLastName() != null) user.setLastName(request.getLastName().trim());
+        if (request.getGender() != null) user.setGender(request.getGender());
+        if (request.getDob() != null) user.setDob(request.getDob());
+        if (request.getMaritalStatus() != null) user.setMaritalStatus(request.getMaritalStatus());
+        if (request.getOccupation() != null) user.setOccupation(request.getOccupation().trim());
+        if (request.getAnnualIncome() != null) user.setAnnualIncome(request.getAnnualIncome());
+        if (request.getAddress() != null) user.setAddress(request.getAddress().trim());
+        if (request.getCity() != null) user.setCity(request.getCity().trim());
+        if (request.getState() != null) user.setState(request.getState().trim());
+        if (request.getPincode() != null) user.setPincode(request.getPincode().trim());
+        if (request.getProfilePhoto() != null) user.setProfilePhoto(request.getProfilePhoto().trim());
+
+        User updatedUser = userRepository.save(user);
+        return mapToProfileResponse(updatedUser);
+    }
+
+    private static ParentProfileResponse mapToProfileResponse(User user) {
+        return ParentProfileResponse.builder()
+                .userId(user.getUserId())
+                .firstName(user.getFirstName())
+                .lastName(user.getLastName())
+                .email(user.getEmail())
+                .phone(user.getPhone())
+                .gender(user.getGender())
+                .dob(user.getDob())
+                .aadhaarNumber(user.getAadhaarNumber())
+                .maritalStatus(user.getMaritalStatus())
+                .occupation(user.getOccupation())
+                .annualIncome(user.getAnnualIncome())
+                .address(user.getAddress())
+                .city(user.getCity())
+                .state(user.getState())
+                .pincode(user.getPincode())
+                .profilePhoto(user.getProfilePhoto())
+                .status(user.getStatus())
+                .createdAt(user.getCreatedAt())
                 .build();
     }
 }

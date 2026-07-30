@@ -33,6 +33,7 @@ import {
   documents as initialDocs,
 } from "../data/mockData";
 import { getUser, saveUserProfile } from "../auth";
+import { api, errorMessage } from "../api";
 
 const fmt = (d) => (d ? new Date(d).toLocaleDateString("en-IN") : "—");
 export function ParentDashboard() {
@@ -166,26 +167,80 @@ export function ParentDashboard() {
 export function ParentProfile() {
   const current = getUser();
   const [form, setForm] = useState({
-    firstName: current?.fullName?.split(" ")[0] || "Akash",
-    lastName: current?.fullName?.split(" ").slice(1).join(" ") || "Battula",
-    email: current?.email || "parent@aashray.demo",
-    phone: "9876543210",
+    firstName: current?.firstName || current?.fullName?.split(" ")[0] || "",
+    lastName: current?.lastName || current?.fullName?.split(" ").slice(1).join(" ") || "",
+    email: current?.email || "",
+    phone: current?.phone || "",
     gender: "MALE",
-    dob: "2001-06-12",
-    aadhaar: "XXXX XXXX 4821",
+    dob: "",
+    aadhaarNumber: "",
     maritalStatus: "MARRIED",
-    occupation: "Software Engineer",
-    annualIncome: "840000",
-    address: "12 Lake View Road",
-    city: "Pune",
-    state: "Maharashtra",
-    pincode: "411001",
+    occupation: "",
+    annualIncome: "",
+    address: "",
+    city: "",
+    state: "",
+    pincode: "",
   });
+  const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState(null);
-  const save = (e) => {
+
+  React.useEffect(() => {
+    const loadProfile = async () => {
+      setLoading(true);
+      try {
+        const response = await api.get("/parents/profile");
+        const data = response.data?.data || response.data;
+        if (data) {
+          setForm({
+            firstName: data.firstName || "",
+            lastName: data.lastName || "",
+            email: data.email || "",
+            phone: data.phone || "",
+            gender: data.gender || "MALE",
+            dob: data.dob || "",
+            aadhaarNumber: data.aadhaarNumber || "",
+            maritalStatus: data.maritalStatus || "MARRIED",
+            occupation: data.occupation || "",
+            annualIncome: data.annualIncome !== undefined && data.annualIncome !== null ? String(data.annualIncome) : "",
+            address: data.address || "",
+            city: data.city || "",
+            state: data.state || "",
+            pincode: data.pincode || "",
+          });
+        }
+      } catch (e) {
+        console.warn("Could not fetch live profile:", errorMessage(e));
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadProfile();
+  }, []);
+
+  const save = async (e) => {
     e.preventDefault();
-    saveUserProfile({ ...form, role: "PARENT" });
-    setToast({ message: "Profile updated successfully" });
+    setSaving(true);
+    try {
+      const response = await api.put("/parents/profile", form);
+      const data = response.data?.data || response.data;
+      const updatedUser = {
+        ...current,
+        fullName: `${data.firstName || form.firstName} ${data.lastName || form.lastName}`.trim(),
+        firstName: data.firstName || form.firstName,
+        lastName: data.lastName || form.lastName,
+        email: data.email || form.email,
+        phone: data.phone || form.phone,
+        role: "PARENT",
+      };
+      saveUserProfile(updatedUser);
+      setToast({ message: "Profile updated successfully!" });
+    } catch (err) {
+      setToast({ type: "error", message: errorMessage(err) });
+    } finally {
+      setSaving(false);
+    }
   };
   return (
     <>
@@ -197,7 +252,7 @@ export function ParentProfile() {
       <Card>
         <form onSubmit={save}>
           <div className="profile-photo-row">
-            <div className="profile-photo-large">{form.firstName[0]}</div>
+            <div className="profile-photo-large">{(form.firstName || "P")[0]}</div>
             <div>
               <h3>
                 {form.firstName} {form.lastName}
@@ -213,6 +268,7 @@ export function ParentProfile() {
               label="First name"
               value={form.firstName}
               onChange={(e) => setForm({ ...form, firstName: e.target.value })}
+              required
             />
             <Field
               label="Last name"
@@ -224,11 +280,14 @@ export function ParentProfile() {
               type="email"
               value={form.email}
               onChange={(e) => setForm({ ...form, email: e.target.value })}
+              required
+              disabled
             />
             <Field
               label="Phone"
               value={form.phone}
               onChange={(e) => setForm({ ...form, phone: e.target.value })}
+              required
             />
             <SelectField
               label="Gender"
@@ -247,8 +306,8 @@ export function ParentProfile() {
             />
             <Field
               label="Aadhaar number"
-              value={form.aadhaar}
-              onChange={(e) => setForm({ ...form, aadhaar: e.target.value })}
+              value={form.aadhaarNumber}
+              onChange={(e) => setForm({ ...form, aadhaarNumber: e.target.value })}
             />
             <SelectField
               label="Marital status"
@@ -297,8 +356,8 @@ export function ParentProfile() {
             />
           </div>
           <div className="modal-actions">
-            <Button>
-              <Save size={16} /> Save profile
+            <Button disabled={saving}>
+              <Save size={16} /> {saving ? "Saving..." : "Save profile"}
             </Button>
           </div>
         </form>
