@@ -37,7 +37,19 @@ export const clearSession = () => {
   localStorage.removeItem('user');
 };
 
-export const isAuthenticated = () => !!localStorage.getItem('token') && !!getUser();
+export const isAuthenticated = () => {
+  const token = localStorage.getItem('token');
+  const user = getUser();
+  return Boolean(
+    token &&
+    token !== 'null' &&
+    token !== 'undefined' &&
+    token.trim() !== '' &&
+    user &&
+    typeof user === 'object' &&
+    user.role
+  );
+};
 
 export const roleHome = (role) => {
   if (["ADMIN", "SUPER_ADMIN"].includes(role)) {
