@@ -55,7 +55,10 @@ export default function Children() {
           Object.entries(filters).filter(([, v]) => v !== ""),
         ),
       })
-      .then((r) => setRows(r.data))
+      .then((r) => {
+        const data = Array.isArray(r.data) ? r.data : (r.data?.content || []);
+        setRows(data);
+      })
       .catch((e) => setToast({ type: "error", message: errorMessage(e) }))
       .finally(() => setLoading(false));
   };

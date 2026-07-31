@@ -42,7 +42,6 @@ public class Child {
 
     private LocalDate dob;
 
-    @Enumerated(EnumType.STRING)
     private BloodGroup bloodGroup;
 
     @Column(columnDefinition="TEXT")

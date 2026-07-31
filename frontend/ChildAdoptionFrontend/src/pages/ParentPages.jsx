@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Baby,
@@ -26,6 +26,7 @@ import {
   Status,
   Modal,
   Toast,
+  Loading,
 } from "../components/UI";
 import {
   children as initialChildren,
@@ -411,30 +412,75 @@ export function ParentDocuments() {
 }
 
 export function ParentChildren() {
-  const [search, setSearch] = useState(""),
-    [gender, setGender] = useState(""),
-    [age, setAge] = useState(""),
-    [special, setSpecial] = useState(""),
-    [detail, setDetail] = useState(null),
-    [toast, setToast] = useState(null);
+  const [childrenList, setChildrenList] = useState([]);
+  const [loadingList, setLoadingList] = useState(true);
+  const [search, setSearch] = useState("");
+  const [gender, setGender] = useState("");
+  const [age, setAge] = useState("");
+  const [special, setSpecial] = useState("");
+  const [detail, setDetail] = useState(null);
+  const [loadingDetail, setLoadingDetail] = useState(false);
+  const [toast, setToast] = useState(null);
+  const [isFetched, setIsFetched] = useState(false);
+  const [page, setPage] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+
+  const fetchChildren = useCallback(async () => {
+    setLoadingList(true);
+    try {
+      const res = await api.get(`/children?page=${page}&size=10`);
+      const data = res.data?.content ? res.data.content : (Array.isArray(res.data) ? res.data : []);
+      if (res.data?.totalPages !== undefined) {
+        setTotalPages(res.data.totalPages);
+      }
+      setChildrenList(data);
+      setIsFetched(true);
+    } catch (err) {
+      console.warn("Using fallback initial children:", errorMessage(err));
+      setChildrenList(initialChildren);
+    } finally {
+      setLoadingList(false);
+    }
+  }, [page]);
+
+  React.useEffect(() => {
+    fetchChildren();
+  }, [fetchChildren]);
+
+  const openDetailModal = async (c) => {
+    setLoadingDetail(true);
+    try {
+      const res = await api.get(`/children/${c.childId}`);
+      setDetail(res.data);
+    } catch (err) {
+      setDetail(c);
+    } finally {
+      setLoadingDetail(false);
+    }
+  };
+
+  const baseList = isFetched ? childrenList : initialChildren;
+
   const rows = useMemo(
     () =>
-      initialChildren.filter(
+      baseList.filter(
         (c) =>
           (!search ||
-            `${c.firstName} ${c.lastName}`
+            (c.name || `${c.firstName || ''} ${c.lastName || ''}`)
               .toLowerCase()
               .includes(search.toLowerCase())) &&
           (!gender || c.gender === gender) &&
-          (!age || c.age <= Number(age)) &&
+          (!age || (c.age != null && c.age <= Number(age))) &&
           (!special || (special === "YES" ? c.specialNeeds : !c.specialNeeds)),
       ),
-    [search, gender, age, special],
+    [baseList, search, gender, age, special],
   );
+
   const apply = (c) =>
     setToast({
-      message: `Application started for ${c.firstName}. Demo request created.`,
+      message: `Application started for ${c.name || c.firstName}. Demo request created.`,
     });
+
   return (
     <>
       <PageHeader
@@ -478,36 +524,43 @@ export function ParentChildren() {
             <option value="NO">No</option>
           </select>
         </div>
-        <div className="card-grid">
-          {rows.map((c) => (
-            <article className="child-card" key={c.childId}>
-              <div className="child-photo">
-                <img src={c.profilePhoto} alt={c.firstName} />
-                <Status value={c.status} />
-              </div>
-              <div className="child-body">
-                <h3>
-                  {c.firstName} {c.lastName}
-                </h3>
-                <p>
-                  {c.gender} · {c.age} years · {c.education}
-                </p>
-                <div className="tag-row">
-                  <span>{c.hobbies}</span>
-                  {c.specialNeeds && <span>Special needs</span>}
+        {loadingList ? (
+          <Loading />
+        ) : (
+          <div className="card-grid">
+            {rows.map((c) => (
+              <article className="child-card" key={c.childId}>
+                <div className="child-photo">
+                  <img
+                    src={c.image || c.profilePhoto || "https://images.unsplash.com/photo-1595454223600-91fbddbbf255?auto=format&fit=crop&w=600&q=80"}
+                    alt={c.name || c.firstName}
+                  />
+                  <Status value={c.status || "AVAILABLE"} />
                 </div>
-                <div className="card-actions parent-actions">
-                  <button onClick={() => setDetail(c)}>
-                    <Eye /> Details
-                  </button>
-                  <button onClick={() => apply(c)}>
-                    <ClipboardList /> Apply
-                  </button>
+                <div className="child-body">
+                  <h3>
+                    {c.name || `${c.firstName || ''} ${c.lastName || ''}`.trim()}
+                  </h3>
+                  <p>
+                    {c.gender} · {c.age != null ? `${c.age} years` : 'Age N/A'} · {c.education || 'Primary'}
+                  </p>
+                  <div className="tag-row">
+                    {c.hobbies && <span>{c.hobbies}</span>}
+                    {c.specialNeeds && <span>Special needs</span>}
+                  </div>
+                  <div className="card-actions parent-actions">
+                    <button onClick={() => openDetailModal(c)}>
+                      <Eye /> Details
+                    </button>
+                    <button onClick={() => apply(c)}>
+                      <ClipboardList /> Apply
+                    </button>
+                  </div>
                 </div>
-              </div>
-            </article>
-          ))}
-        </div>
+              </article>
+            ))}
+          </div>
+        )}
       </Card>
       <Modal
         open={!!detail}
@@ -518,44 +571,44 @@ export function ParentChildren() {
         {detail && (
           <>
             <div className="child-detail-hero">
-              <img src={detail.profilePhoto} />
+              <img src={detail.image || detail.profilePhoto} alt={detail.name || detail.firstName} />
               <div>
                 <h3>
-                  {detail.firstName} {detail.lastName}
+                  {detail.name || `${detail.firstName || ''} ${detail.lastName || ''}`.trim()}
                 </h3>
-                <Status value={detail.status} />
+                <Status value={detail.status || "AVAILABLE"} />
                 <p>
-                  {detail.gender} · {detail.age} years
+                  {detail.gender} · {detail.age != null ? `${detail.age} years` : 'N/A'}
                 </p>
               </div>
             </div>
             <div className="detail-grid">
               <div>
                 <span>Date of birth</span>
-                <b>{fmt(detail.dob)}</b>
+                <b>{detail.dob ? fmt(detail.dob) : 'N/A'}</b>
               </div>
               <div>
                 <span>Blood group</span>
-                <b>{detail.bloodGroup}</b>
+                <b>{detail.bloodGroup || 'N/A'}</b>
               </div>
               <div>
                 <span>Education</span>
-                <b>{detail.education}</b>
+                <b>{detail.education || 'N/A'}</b>
               </div>
               <div>
                 <span>Hobbies</span>
-                <b>{detail.hobbies}</b>
+                <b>{detail.hobbies || 'N/A'}</b>
               </div>
               <div>
                 <span>Special needs</span>
                 <b>{detail.specialNeeds ? "Yes" : "No"}</b>
               </div>
               <div>
-                <span>Medical notes</span>
-                <b>{detail.medicalNotes}</b>
+                <span>Medical summary</span>
+                <b>{detail.medicalSummary || detail.medicalNotes || 'Healthy'}</b>
               </div>
             </div>
-            <p className="description-box">{detail.description}</p>
+            {detail.description && <p className="description-box">{detail.description}</p>}
             <div className="modal-actions">
               <Button
                 onClick={() => {
