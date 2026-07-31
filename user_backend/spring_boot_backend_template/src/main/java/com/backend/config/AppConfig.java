@@ -17,7 +17,7 @@ public class AppConfig {
 	@Bean //method level annotation - to declare a method returning java object
 	 ModelMapper modelMapper()
 	{
-		ModelMapper mapper=new   ModelMapper();
+		ModelMapper mapper=new ModelMapper();
 		//configure mapper - to transfer the matching props (name + data type)
 		mapper.getConfiguration()
 		.setMatchingStrategy(MatchingStrategies.STRICT)
