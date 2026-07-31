@@ -82,7 +82,6 @@ public class SecurityConfig {
             .exceptionHandling(exception -> exception.authenticationEntryPoint(unauthorizedHandler))
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/api/children", "/api/children/**").permitAll()
                 .requestMatchers("/api/parents/register", "/api/parents/register/**").permitAll()
                 .requestMatchers("/api/auth/login", "/api/auth/login/**").permitAll()
                 .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
