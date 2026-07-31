@@ -1,0 +1,18 @@
+using ChildAdoptionAdmin.Api.Data;
+using ChildAdoptionAdmin.Api.DTOs;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+namespace ChildAdoptionAdmin.Api.Controllers;
+[ApiController,Route("api/parents"),Authorize(Roles="ADMIN,SUPER_ADMIN")]
+public class ParentsController:ControllerBase
+{
+ private readonly AppDbContext _db; public ParentsController(AppDbContext db)=>_db=db;
+ private static ParentResponse Map(ChildAdoptionAdmin.Api.Models.ParentUser u)=>new(u.UserId,u.FirstName,u.LastName,u.Email,u.Phone,u.Gender,u.Dob,u.AadhaarNumber,u.MaritalStatus,u.Occupation,u.AnnualIncome,u.Address,u.City,u.State,u.Pincode,u.ProfilePhoto,u.Status,u.CreatedAt);
+ [HttpGet] public async Task<ActionResult> GetAll(string? search,string? gender,string? status){var q=_db.Users.AsNoTracking().AsQueryable();if(!string.IsNullOrWhiteSpace(search))q=q.Where(u=>(u.FirstName+" "+(u.LastName??"")).Contains(search)||u.Email.Contains(search)||u.Phone.Contains(search));if(!string.IsNullOrWhiteSpace(gender))q=q.Where(u=>u.Gender==gender.ToUpper());if(!string.IsNullOrWhiteSpace(status))q=q.Where(u=>u.Status==status.ToUpper());return Ok((await q.OrderByDescending(u=>u.CreatedAt).ToListAsync()).Select(Map));}
+ [HttpGet("{id:long}")] public async Task<ActionResult> GetById(long id){var u=await _db.Users.FindAsync(id);if(u is null)return NotFound(new{message="Parent not found."});var docs=await _db.UserDocuments.Where(d=>d.UserId==id).OrderByDescending(d=>d.UploadedAt).ToListAsync();var apps=await _db.AdoptionRequests.Where(a=>a.UserId==id).Select(a=>new{a.RequestId,a.ApplicationNumber,a.ChildId,ChildName=a.Child!=null?a.Child.FirstName:"",a.Status,a.RequestDate}).ToListAsync();return Ok(new{parent=Map(u),documents=docs,applications=apps});}
+ [HttpPut("{id:long}/status")] public async Task<IActionResult> UpdateStatus(long id,UpdateParentStatusRequest r){var status=r.Status.ToUpper();if(!new[]{"ACTIVE","INACTIVE"}.Contains(status))return BadRequest(new{message="Status must be ACTIVE or INACTIVE."});var u=await _db.Users.FindAsync(id);if(u is null)return NotFound(new{message="Parent not found."});u.Status=status;await _db.SaveChangesAsync();return NoContent();}
+ [HttpGet("{id:long}/documents")] public async Task<ActionResult> Documents(long id)=>Ok(await _db.UserDocuments.Where(d=>d.UserId==id).OrderByDescending(d=>d.UploadedAt).Select(d=>new ParentDocumentResponse(d.DocumentId,d.UserId,d.RequestId,d.DocumentType,d.FileName,d.FilePath,d.VerificationStatus,d.UploadedAt)).ToListAsync());
+ [HttpPut("{parentId:long}/documents/{documentId:long}/verify")] public async Task<IActionResult> Verify(long parentId,long documentId,VerifyDocumentRequest r){var status=r.VerificationStatus.ToUpper();if(!new[]{"PENDING","VERIFIED","REJECTED"}.Contains(status))return BadRequest(new{message="Invalid verification status."});var d=await _db.UserDocuments.FirstOrDefaultAsync(x=>x.DocumentId==documentId&&x.UserId==parentId);if(d is null)return NotFound(new{message="Document not found."});d.VerificationStatus=status;await _db.SaveChangesAsync();return NoContent();}
+ [HttpDelete("{id:long}")] public async Task<IActionResult> Delete(long id){var u=await _db.Users.FindAsync(id);if(u is null)return NotFound(new{message="Parent not found."});var active=await _db.AdoptionRequests.AnyAsync(a=>a.UserId==id&&!new[]{"REJECTED","APPROVED"}.Contains(a.Status));if(active)return Conflict(new{message="Parent has an active adoption process and cannot be deleted."});var docs=_db.UserDocuments.Where(d=>d.UserId==id);_db.UserDocuments.RemoveRange(docs);_db.Users.Remove(u);await _db.SaveChangesAsync();return NoContent();}
+}

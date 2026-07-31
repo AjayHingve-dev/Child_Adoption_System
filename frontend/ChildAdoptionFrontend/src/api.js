@@ -15,7 +15,7 @@ api.interceptors.request.use(config => {
   }
 
   // Route requests dynamically based on module path
-  if (config.url && (config.url.startsWith('/parents') || config.url.startsWith('/parent'))) {
+  if (config.url && (config.url.startsWith('/parents') || config.url.startsWith('/parent') || config.url.startsWith('/children') || config.url.startsWith('/api/children'))) {
     config.baseURL = PARENT_API_URL;
   }
 
@@ -28,7 +28,13 @@ api.interceptors.response.use(
       if (r.data.data && typeof r.data.data === 'object' && Array.isArray(r.data.data.items)) {
         return { ...r, data: r.data.data.items };
       }
+      if (r.data.data && typeof r.data.data === 'object' && Array.isArray(r.data.data.content)) {
+        return { ...r, data: r.data.data.content };
+      }
       return { ...r, data: r.data.data };
+    }
+    if (r.data && typeof r.data === 'object' && Array.isArray(r.data.content)) {
+      return { ...r, data: r.data.content, pageInfo: r.data };
     }
     return r;
   },

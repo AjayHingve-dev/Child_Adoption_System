@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Baby,
@@ -411,25 +411,45 @@ export function ParentDocuments() {
 }
 
 export function ParentChildren() {
-  const [search, setSearch] = useState(""),
-    [gender, setGender] = useState(""),
-    [age, setAge] = useState(""),
-    [special, setSpecial] = useState(""),
-    [detail, setDetail] = useState(null),
-    [toast, setToast] = useState(null);
+  const [childrenList, setChildrenList] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
+  const [gender, setGender] = useState("");
+  const [age, setAge] = useState("");
+  const [special, setSpecial] = useState("");
+  const [detail, setDetail] = useState(null);
+  const [toast, setToast] = useState(null);
+
+  useEffect(() => {
+    setLoading(true);
+    api.get("/children")
+      .then((res) => {
+        const data = Array.isArray(res.data) ? res.data : (res.data?.content || []);
+        if (data.length > 0) {
+          setChildrenList(data);
+        } else {
+          setChildrenList(initialChildren);
+        }
+      })
+      .catch(() => {
+        setChildrenList(initialChildren);
+      })
+      .finally(() => setLoading(false));
+  }, []);
+
   const rows = useMemo(
     () =>
-      initialChildren.filter(
+      childrenList.filter(
         (c) =>
           (!search ||
-            `${c.firstName} ${c.lastName}`
+            `${c.firstName || ''} ${c.lastName || ''} ${c.name || ''}`
               .toLowerCase()
               .includes(search.toLowerCase())) &&
           (!gender || c.gender === gender) &&
-          (!age || c.age <= Number(age)) &&
+          (!age || (c.age != null && c.age <= Number(age))) &&
           (!special || (special === "YES" ? c.specialNeeds : !c.specialNeeds)),
       ),
-    [search, gender, age, special],
+    [childrenList, search, gender, age, special],
   );
   const apply = (c) =>
     setToast({
