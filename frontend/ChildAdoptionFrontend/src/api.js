@@ -15,7 +15,13 @@ api.interceptors.request.use(config => {
   }
 
   // Route requests dynamically based on module path
-  if (config.url && (config.url.startsWith('/parents') || config.url.startsWith('/parent'))) {
+  if (config.url && (
+    config.url.startsWith('/parents') ||
+    config.url.startsWith('/parent') ||
+    config.url.startsWith('/children') ||
+    config.url.startsWith('/adoption-requests') ||
+    config.url.startsWith('/user-documents')
+  )) {
     config.baseURL = PARENT_API_URL;
   }
 
