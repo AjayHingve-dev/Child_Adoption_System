@@ -34,20 +34,11 @@ export default function ParentRegister() {
       const response = await api.post("/parents/register", payload);
       const sessionData = response.data?.data || response.data;
       saveSession(sessionData);
-      setToast({ message: "Registration successful!" });
-      setTimeout(() => nav("/parent/dashboard"), 400);
+      setToast({ message: "Parent registered successfully!" });
+      setTimeout(() => nav("/parent/dashboard"), 500);
     } catch (err) {
-      console.warn("Live API registration failed, checking fallback:", errorMessage(err));
-      // Fallback mode if backend is starting up
-      const fallbackUser = {
-        fullName: `${payload.firstName} ${payload.lastName}`.trim(),
-        email: payload.email,
-        phone: payload.phone,
-        role: "PARENT",
-      };
-      saveSession(fallbackUser);
-      setToast({ message: "Registration successful (Offline Mode)" });
-      setTimeout(() => nav("/parent/dashboard"), 400);
+      console.error("Registration error:", errorMessage(err));
+      setToast({ type: "error", message: `Registration failed: ${errorMessage(err)}` });
     } finally {
       setLoading(false);
     }

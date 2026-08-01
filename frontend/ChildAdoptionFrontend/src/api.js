@@ -20,9 +20,15 @@ api.interceptors.request.use(config => {
     config.url.startsWith('/parent') ||
     config.url.startsWith('/children') ||
     config.url.startsWith('/adoption-requests') ||
-    config.url.startsWith('/user-documents')
+    config.url.startsWith('/user-documents') ||
+    config.url.startsWith('/documents')
   )) {
     config.baseURL = PARENT_API_URL;
+  }
+
+  // Remove default application/json header when posting FormData so boundary is automatically set
+  if (config.data instanceof FormData) {
+    delete config.headers['Content-Type'];
   }
 
   return config;
