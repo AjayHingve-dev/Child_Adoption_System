@@ -1,7 +1,9 @@
 package com.backend.services;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -11,14 +13,17 @@ import org.springframework.transaction.annotation.Transactional;
 import com.backend.dto.AdoptionRequestDetailsResponseDto;
 import com.backend.dto.AdoptionRequestDto;
 import com.backend.dto.AdoptionResponseDto;
+import com.backend.dto.ApplicationStatusTrackingResponseDto;
 import com.backend.entity.AdoptionRequest;
 import com.backend.entity.Child;
 import com.backend.entity.ChildStatus;
+import com.backend.entity.HomeVisit;
 import com.backend.entity.RequestStatus;
 import com.backend.entity.User;
 import com.backend.entity.UserDocument;
 import com.backend.repository.AdoptionRequestRepository;
 import com.backend.repository.ChildRepository;
+import com.backend.repository.HomeVisitRepository;
 import com.backend.repository.UserDocumentRepository;
 import com.backend.repository.UserRepository;
 
@@ -33,6 +38,7 @@ public class AdoptionRequestServiceImpl implements AdoptionRequestService {
     private final UserRepository userRepository;
     private final ChildRepository childRepository;
     private final UserDocumentRepository userDocumentRepository;
+    private final HomeVisitRepository homeVisitRepository;
 
     private User resolveRegisteredUser(Long userId, String email) {
         User user = null;
@@ -175,6 +181,135 @@ public class AdoptionRequestServiceImpl implements AdoptionRequestService {
         dto.setAdminRemark(request.getAdminRemark());
 
         return dto;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public ApplicationStatusTrackingResponseDto getApplicationStatusTracking(String idOrAppNumber) {
+        if (idOrAppNumber == null || idOrAppNumber.trim().isEmpty()) {
+            throw new IllegalArgumentException("Application ID or number must be provided");
+        }
+
+        AdoptionRequest request = null;
+        try {
+            Long requestId = Long.parseLong(idOrAppNumber.trim());
+            request = adoptionRequestRepository.findById(requestId).orElse(null);
+        } catch (NumberFormatException ignored) {}
+
+        if (request == null) {
+            request = adoptionRequestRepository.findByApplicationNumber(idOrAppNumber.trim())
+                    .orElseThrow(() -> new IllegalArgumentException("Adoption request not found with ID or application number: " + idOrAppNumber));
+        }
+
+        String childName = request.getChild() != null ?
+                (request.getChild().getFirstName() + " " + (request.getChild().getLastName() != null ? request.getChild().getLastName() : "")).trim() : "N/A";
+        String childGender = (request.getChild() != null && request.getChild().getGender() != null) ?
+                request.getChild().getGender().name() : "N/A";
+
+        // Query home visit info if available
+        Optional<HomeVisit> homeVisitOpt = homeVisitRepository.findFirstByRequestRequestIdOrderByCreatedAtDesc(request.getRequestId());
+        String socialWorkerName = null;
+        String visitDate = null;
+        String visitTime = null;
+        String visitStatus = null;
+
+        if (homeVisitOpt.isPresent()) {
+            HomeVisit visit = homeVisitOpt.get();
+            if (visit.getSocialWorker() != null) {
+                socialWorkerName = (visit.getSocialWorker().getFirstName() + " " + (visit.getSocialWorker().getLastName() != null ? visit.getSocialWorker().getLastName() : "")).trim();
+            }
+            if (visit.getScheduledDate() != null) {
+                visitDate = visit.getScheduledDate().toString();
+            }
+            if (visit.getScheduledTime() != null) {
+                visitTime = visit.getScheduledTime().toString();
+            }
+            if (visit.getStatus() != null) {
+                visitStatus = visit.getStatus().name();
+            }
+        }
+
+        RequestStatus currentStatus = request.getStatus();
+        List<ApplicationStatusTrackingResponseDto.TimelineStepDto> timeline = new ArrayList<>();
+
+        // Step 1: PENDING
+        boolean isPendingDone = true;
+        boolean isPendingCurrent = (currentStatus == RequestStatus.PENDING);
+        timeline.add(ApplicationStatusTrackingResponseDto.TimelineStepDto.builder()
+                .stepKey("PENDING")
+                .label("Application Submitted")
+                .completed(isPendingDone)
+                .current(isPendingCurrent)
+                .updatedAt(request.getRequestDate())
+                .description("Your application has been registered successfully.")
+                .build());
+
+        // Step 2: UNDER_REVIEW
+        boolean isReviewDone = currentStatus != RequestStatus.PENDING;
+        boolean isReviewCurrent = (currentStatus == RequestStatus.UNDER_REVIEW);
+        timeline.add(ApplicationStatusTrackingResponseDto.TimelineStepDto.builder()
+                .stepKey("UNDER_REVIEW")
+                .label("Under Review")
+                .completed(isReviewDone)
+                .current(isReviewCurrent)
+                .updatedAt(isReviewDone ? (request.getStatusUpdatedAt() != null ? request.getStatusUpdatedAt() : request.getRequestDate()) : null)
+                .description("Initial document and background check review.")
+                .build());
+
+        // Step 3: HOME_VISIT
+        boolean isHomeVisitDone = (currentStatus == RequestStatus.HOME_VISIT || currentStatus == RequestStatus.APPROVED || currentStatus == RequestStatus.COMPLETED);
+        boolean isHomeVisitCurrent = (currentStatus == RequestStatus.HOME_VISIT);
+        String visitDesc = visitDate != null ? "Home visit scheduled on " + visitDate + (visitTime != null ? " at " + visitTime : "") : "Social worker home visit assessment.";
+        timeline.add(ApplicationStatusTrackingResponseDto.TimelineStepDto.builder()
+                .stepKey("HOME_VISIT")
+                .label("Home Visit")
+                .completed(isHomeVisitDone)
+                .current(isHomeVisitCurrent)
+                .updatedAt(isHomeVisitDone ? (homeVisitOpt.map(HomeVisit::getCompletedAt).orElse(request.getStatusUpdatedAt())) : null)
+                .description(visitDesc)
+                .build());
+
+        // Step 4: APPROVED / REJECTED
+        boolean isDecisionDone = (currentStatus == RequestStatus.APPROVED || currentStatus == RequestStatus.REJECTED || currentStatus == RequestStatus.COMPLETED);
+        boolean isDecisionCurrent = (currentStatus == RequestStatus.APPROVED || currentStatus == RequestStatus.REJECTED);
+        String decisionLabel = currentStatus == RequestStatus.REJECTED ? "Rejected" : "Approved";
+        String decisionDesc = request.getAdminRemark() != null ? request.getAdminRemark() : (currentStatus == RequestStatus.REJECTED ? "Application was rejected after review." : "Application approved by adoption committee.");
+        timeline.add(ApplicationStatusTrackingResponseDto.TimelineStepDto.builder()
+                .stepKey(currentStatus == RequestStatus.REJECTED ? "REJECTED" : "APPROVED")
+                .label(decisionLabel)
+                .completed(isDecisionDone)
+                .current(isDecisionCurrent)
+                .updatedAt(isDecisionDone ? request.getStatusUpdatedAt() : null)
+                .description(decisionDesc)
+                .build());
+
+        // Step 5: COMPLETED
+        boolean isCompletedDone = (currentStatus == RequestStatus.COMPLETED);
+        timeline.add(ApplicationStatusTrackingResponseDto.TimelineStepDto.builder()
+                .stepKey("COMPLETED")
+                .label("Completed")
+                .completed(isCompletedDone)
+                .current(isCompletedDone)
+                .updatedAt(isCompletedDone ? request.getStatusUpdatedAt() : null)
+                .description("Final adoption placement and documentation completed.")
+                .build());
+
+        return ApplicationStatusTrackingResponseDto.builder()
+                .requestId(request.getRequestId())
+                .applicationNumber(request.getApplicationNumber())
+                .childId(request.getChild() != null ? request.getChild().getChildId() : null)
+                .childName(childName)
+                .childGender(childGender)
+                .status(request.getStatus())
+                .requestDate(request.getRequestDate())
+                .statusUpdatedAt(request.getStatusUpdatedAt())
+                .adminRemark(request.getAdminRemark())
+                .socialWorkerName(socialWorkerName)
+                .visitDate(visitDate)
+                .visitTime(visitTime)
+                .visitStatus(visitStatus)
+                .timeline(timeline)
+                .build();
     }
 
     @Override

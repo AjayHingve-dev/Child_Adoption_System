@@ -5,6 +5,7 @@ import java.util.List;
 import com.backend.dto.AdoptionRequestDetailsResponseDto;
 import com.backend.dto.AdoptionRequestDto;
 import com.backend.dto.AdoptionResponseDto;
+import com.backend.dto.ApplicationStatusTrackingResponseDto;
 
 public interface AdoptionRequestService {
     AdoptionResponseDto submitAdoptionRequest(AdoptionRequestDto requestDto);
@@ -16,6 +17,8 @@ public interface AdoptionRequestService {
     List<AdoptionResponseDto> getMyRequests(Long userId, String email);
     
     AdoptionRequestDetailsResponseDto getRequestDetails(Long requestId);
+    
+    ApplicationStatusTrackingResponseDto getApplicationStatusTracking(String idOrAppNumber);
     
     void withdrawRequest(Long requestId);
 }
