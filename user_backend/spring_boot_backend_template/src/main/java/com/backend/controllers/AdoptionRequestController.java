@@ -19,6 +19,7 @@ import com.backend.dto.ApiResponse;
 import com.backend.dto.AdoptionRequestDetailsResponseDto;
 import com.backend.dto.AdoptionRequestDto;
 import com.backend.dto.AdoptionResponseDto;
+import com.backend.dto.ApplicationStatusTrackingResponseDto;
 import com.backend.security.UserPrincipal;
 import com.backend.services.AdoptionRequestService;
 
@@ -66,6 +67,15 @@ public class AdoptionRequestController {
 
         List<AdoptionResponseDto> requests = adoptionRequestService.getMyRequests(effectiveUserId, email);
         return ResponseEntity.ok(ApiResponse.ok(requests, "Adoption requests retrieved successfully"));
+    }
+
+    // GET /api/adoption-requests/status/{id}
+    @GetMapping("/status/{id}")
+    public ResponseEntity<ApiResponse<ApplicationStatusTrackingResponseDto>> getApplicationStatusTracking(
+            @PathVariable("id") String id) {
+
+        ApplicationStatusTrackingResponseDto tracking = adoptionRequestService.getApplicationStatusTracking(id);
+        return ResponseEntity.ok(ApiResponse.ok(tracking, "Application status tracking retrieved successfully"));
     }
 
     // GET /api/adoption-requests/user/{userId}

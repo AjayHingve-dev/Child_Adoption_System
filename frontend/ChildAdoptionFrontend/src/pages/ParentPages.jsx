@@ -817,7 +817,8 @@ export function ParentChildren() {
 export function ParentApplications() {
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [selectedDetails, setSelectedDetails] = useState(null);
+  const [trackingData, setTrackingData] = useState(null);
+  const [loadingTracking, setLoadingTracking] = useState(false);
 
   const fetchMyRequests = useCallback(async () => {
     setLoading(true);
@@ -843,21 +844,26 @@ export function ParentApplications() {
     fetchMyRequests();
   }, [fetchMyRequests]);
 
-  const viewDetails = async (requestId) => {
+  const viewTracking = async (requestId) => {
+    setLoadingTracking(true);
     try {
-      const res = await api.get(`/adoption-requests/${requestId}`);
-      setSelectedDetails(res.data?.data || res.data);
+      const res = await api.get(`/adoption-requests/status/${requestId}`);
+      setTrackingData(res.data?.data || res.data);
     } catch (err) {
-      console.error("Failed to fetch request details:", errorMessage(err));
+      console.error("Failed to fetch application status tracking:", errorMessage(err));
+    } finally {
+      setLoadingTracking(false);
     }
   };
+
+  const TRACKING_STEPS = ["PENDING", "UNDER_REVIEW", "HOME_VISIT", "APPROVED", "COMPLETED"];
 
   return (
     <>
       <PageHeader
         eyebrow="Parent portal"
         title="Track Application"
-        description="View the status and details of your submitted adoption requests."
+        description="View step-by-step status updates, home visit details, and decision timeline for your adoption requests."
       />
 
       {loading ? (
@@ -881,21 +887,26 @@ export function ParentApplications() {
                 </div>
                 <Status value={req.status} />
               </div>
+
               <div className="journey-timeline">
-                {["PENDING", "UNDER_REVIEW", "APPROVED", "REJECTED"].map((s, i) => {
-                  const statusOrder = ["PENDING", "UNDER_REVIEW", "APPROVED", "REJECTED"];
+                {TRACKING_STEPS.map((s, i) => {
+                  const statusOrder = req.status === "REJECTED"
+                    ? ["PENDING", "UNDER_REVIEW", "HOME_VISIT", "REJECTED"]
+                    : TRACKING_STEPS;
                   const currentIndex = statusOrder.indexOf(req.status);
-                  const isDone = i <= currentIndex;
-                  const isCurrent = i === currentIndex;
+                  const stepIndex = statusOrder.indexOf(s);
+                  const isDone = stepIndex !== -1 && stepIndex <= currentIndex;
+                  const isCurrent = req.status === s;
 
                   return (
                     <div className={isDone ? "done" : isCurrent ? "current" : ""} key={s}>
                       <i>{isDone ? "✓" : i + 1}</i>
-                      <span>{s.replaceAll("_", " ")}</span>
+                      <span>{s === "REJECTED" ? "REJECTED" : s.replaceAll("_", " ")}</span>
                     </div>
                   );
                 })}
               </div>
+
               <div className="detail-grid">
                 <div>
                   <span>Child name</span>
@@ -910,15 +921,10 @@ export function ParentApplications() {
                   <Status value={req.status} />
                 </div>
               </div>
-              {req.adminRemark && (
-                <div className="info-banner card" style={{ marginTop: "1rem" }}>
-                  <strong>Admin remark</strong>
-                  <p>{req.adminRemark}</p>
-                </div>
-              )}
+
               <div className="modal-actions left" style={{ marginTop: "1rem" }}>
-                <Button variant="secondary" onClick={() => viewDetails(req.requestId)}>
-                  View Details
+                <Button onClick={() => viewTracking(req.requestId)}>
+                  <Eye size={15} /> Track Detailed Timeline
                 </Button>
               </div>
             </Card>
@@ -927,36 +933,96 @@ export function ParentApplications() {
       )}
 
       <Modal
-        open={!!selectedDetails}
-        onClose={() => setSelectedDetails(null)}
-        title="Application Details"
+        open={!!trackingData}
+        onClose={() => setTrackingData(null)}
+        title={`Application Tracking (${trackingData?.applicationNumber || ''})`}
+        wide
       >
-        {selectedDetails && (
-          <div className="detail-grid" style={{ gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
-            <div>
-              <span>Application Number</span>
-              <b>{selectedDetails.applicationNumber}</b>
+        {trackingData && (
+          <div style={{ display: "grid", gap: "1.25rem" }}>
+            <div className="detail-grid" style={{ gridTemplateColumns: "1fr 1fr 1fr", gap: "1rem" }}>
+              <div>
+                <span>Application Number</span>
+                <b>{trackingData.applicationNumber}</b>
+              </div>
+              <div>
+                <span>Child Name</span>
+                <b>{trackingData.childName}</b>
+              </div>
+              <div>
+                <span>Current Status</span>
+                <Status value={trackingData.status} />
+              </div>
             </div>
-            <div>
-              <span>Child Name</span>
-              <b>{selectedDetails.childName}</b>
+
+            {/* Detailed Timeline Steps with Updated Dates */}
+            <div style={{ marginTop: "0.5rem" }}>
+              <h4 style={{ marginBottom: "0.75rem" }}>Timeline Updates</h4>
+              <div style={{ display: "grid", gap: "0.75rem" }}>
+                {trackingData.timeline?.map((step) => (
+                  <div
+                    key={step.stepKey}
+                    style={{
+                      display: "flex",
+                      alignItems: "flex-start",
+                      gap: "0.75rem",
+                      padding: "0.75rem 1rem",
+                      borderRadius: "8px",
+                      background: step.current ? "#eff6ff" : step.completed ? "#f9fafb" : "#ffffff",
+                      border: step.current ? "1px solid #3b82f6" : "1px solid #e5e7eb",
+                    }}
+                  >
+                    <div
+                      style={{
+                        width: "24px",
+                        height: "24px",
+                        borderRadius: "50%",
+                        background: step.completed ? "#10b981" : step.current ? "#3b82f6" : "#e5e7eb",
+                        color: "#fff",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        fontSize: "0.75rem",
+                        fontWeight: "bold",
+                        flexShrink: 0,
+                      }}
+                    >
+                      {step.completed ? "✓" : "•"}
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                        <strong style={{ color: step.current ? "#1d4ed8" : "#111827" }}>{step.label}</strong>
+                        {step.updatedAt && (
+                          <small style={{ color: "#6b7280" }}>Updated: {fmt(step.updatedAt)}</small>
+                        )}
+                      </div>
+                      <p style={{ margin: "0.25rem 0 0 0", fontSize: "0.85rem", color: "#4b5563" }}>
+                        {step.description}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
-            <div>
-              <span>Child Gender</span>
-              <b>{selectedDetails.childGender || "N/A"}</b>
-            </div>
-            <div>
-              <span>Applied Date</span>
-              <b>{fmt(selectedDetails.requestDate)}</b>
-            </div>
-            <div>
-              <span>Status</span>
-              <Status value={selectedDetails.status} />
-            </div>
-            {selectedDetails.adminRemark && (
-              <div style={{ gridColumn: "span 2" }}>
-                <span>Admin Remark</span>
-                <p style={{ marginTop: "0.25rem", color: "#374151" }}>{selectedDetails.adminRemark}</p>
+
+            {/* Home Visit Section if present */}
+            {trackingData.socialWorkerName && (
+              <div className="info-banner card" style={{ marginTop: "0.5rem" }}>
+                <strong>Home Visit Assessment Details</strong>
+                <p style={{ margin: "0.25rem 0 0 0", fontSize: "0.9rem" }}>
+                  Assigned Worker: <b>{trackingData.socialWorkerName}</b>
+                  {trackingData.visitDate && <> · Date: <b>{fmt(trackingData.visitDate)}</b></>}
+                  {trackingData.visitTime && <> · Time: <b>{trackingData.visitTime}</b></>}
+                  {trackingData.visitStatus && <> · Status: <b>{trackingData.visitStatus}</b></>}
+                </p>
+              </div>
+            )}
+
+            {/* Admin Remark */}
+            {trackingData.adminRemark && (
+              <div className="info-banner card" style={{ background: "#fffbe6", borderColor: "#ffe58f" }}>
+                <strong>Admin Remark</strong>
+                <p style={{ margin: "0.25rem 0 0 0" }}>{trackingData.adminRemark}</p>
               </div>
             )}
           </div>
