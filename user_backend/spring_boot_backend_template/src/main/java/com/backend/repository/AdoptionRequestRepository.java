@@ -10,6 +10,8 @@ import com.backend.entity.RequestStatus;
 
 public interface AdoptionRequestRepository extends JpaRepository<AdoptionRequest, Long> {
 
+    boolean existsByUserUserIdAndChildChildId(Long userId, Long childId);
+
     boolean existsByUserUserIdAndChildChildIdAndStatus(
             Long userId,
             Long childId,
@@ -19,6 +21,6 @@ public interface AdoptionRequestRepository extends JpaRepository<AdoptionRequest
     Optional<AdoptionRequest> findByApplicationNumber(String applicationNumber);
     
     List<AdoptionRequest> findByUserUserId(Long userId);
-    
-    
+
+    List<AdoptionRequest> findByUserUserIdOrderByRequestDateDesc(Long userId);
 }

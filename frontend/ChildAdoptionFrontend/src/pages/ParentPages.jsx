@@ -647,10 +647,26 @@ export function ParentChildren() {
     [baseList, search, gender, age, special],
   );
 
-  const apply = (c) =>
-    setToast({
-      message: `Application started for ${c.name || c.firstName}. Demo request created.`,
-    });
+  const apply = async (c) => {
+    const user = getUser();
+    if (!user || user.role !== "PARENT") {
+      setToast({ type: "error", message: "Only registered parent candidates can submit adoption requests. Please sign in or create an account." });
+      return;
+    }
+
+    try {
+      const payload = {
+        userId: user.userId || user.id,
+        childId: c.childId,
+      };
+      const res = await api.post("/adoption-requests", payload);
+      const data = res.data?.data || res.data;
+      setToast({ message: data?.message || `Adoption request submitted successfully for ${c.name || c.firstName}!` });
+      fetchChildren();
+    } catch (err) {
+      setToast({ type: "error", message: errorMessage(err) });
+    }
+  };
 
   return (
     <>
@@ -799,65 +815,153 @@ export function ParentChildren() {
 }
 
 export function ParentApplications() {
+  const [requests, setRequests] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedDetails, setSelectedDetails] = useState(null);
+
+  const fetchMyRequests = useCallback(async () => {
+    setLoading(true);
+    try {
+      const user = getUser();
+      const userIdParam = (user?.userId || user?.id) ? `?userId=${user.userId || user.id}` : "";
+      const res = await api.get(`/adoption-requests/my${userIdParam}`);
+      const data = res.data?.data || res.data;
+      if (Array.isArray(data)) {
+        setRequests(data);
+      } else {
+        setRequests([]);
+      }
+    } catch (err) {
+      console.warn("Failed to fetch adoption requests:", errorMessage(err));
+      setRequests([]);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  React.useEffect(() => {
+    fetchMyRequests();
+  }, [fetchMyRequests]);
+
+  const viewDetails = async (requestId) => {
+    try {
+      const res = await api.get(`/adoption-requests/${requestId}`);
+      setSelectedDetails(res.data?.data || res.data);
+    } catch (err) {
+      console.error("Failed to fetch request details:", errorMessage(err));
+    }
+  };
+
   return (
     <>
       <PageHeader
         eyebrow="Parent portal"
         title="Track Application"
-        description="View the latest status and home visit details for your adoption request."
+        description="View the status and details of your submitted adoption requests."
       />
-      <Card>
-        <div className="application-detail-head">
-          <div>
-            <span>Application number</span>
-            <b>{parentApplication.applicationNumber}</b>
+
+      {loading ? (
+        <Loading label="Loading applications..." />
+      ) : requests.length === 0 ? (
+        <Card>
+          <div className="empty">
+            <ClipboardList size={44} />
+            <h3>No adoption applications found</h3>
+            <p>You haven't submitted any adoption applications yet. Browse available children to apply.</p>
           </div>
-          <Status value={parentApplication.status} />
-        </div>
-        <div className="journey-timeline">
-          {["PENDING", "UNDER_REVIEW", "HOME_VISIT", "FINAL_DECISION"].map(
-            (s, i) => (
-              <div
-                className={i < 2 ? "done" : i === 2 ? "current" : ""}
-                key={s}
-              >
-                <i>{i < 2 ? "✓" : i + 1}</i>
-                <span>{s.replaceAll("_", " ")}</span>
+        </Card>
+      ) : (
+        <div style={{ display: "grid", gap: "1.5rem" }}>
+          {requests.map((req) => (
+            <Card key={req.requestId}>
+              <div className="application-detail-head">
+                <div>
+                  <span>Application number</span>
+                  <b>{req.applicationNumber}</b>
+                </div>
+                <Status value={req.status} />
               </div>
-            ),
-          )}
+              <div className="journey-timeline">
+                {["PENDING", "UNDER_REVIEW", "APPROVED", "REJECTED"].map((s, i) => {
+                  const statusOrder = ["PENDING", "UNDER_REVIEW", "APPROVED", "REJECTED"];
+                  const currentIndex = statusOrder.indexOf(req.status);
+                  const isDone = i <= currentIndex;
+                  const isCurrent = i === currentIndex;
+
+                  return (
+                    <div className={isDone ? "done" : isCurrent ? "current" : ""} key={s}>
+                      <i>{isDone ? "✓" : i + 1}</i>
+                      <span>{s.replaceAll("_", " ")}</span>
+                    </div>
+                  );
+                })}
+              </div>
+              <div className="detail-grid">
+                <div>
+                  <span>Child name</span>
+                  <b>{req.childName}</b>
+                </div>
+                <div>
+                  <span>Applied date</span>
+                  <b>{fmt(req.requestDate)}</b>
+                </div>
+                <div>
+                  <span>Status</span>
+                  <Status value={req.status} />
+                </div>
+              </div>
+              {req.adminRemark && (
+                <div className="info-banner card" style={{ marginTop: "1rem" }}>
+                  <strong>Admin remark</strong>
+                  <p>{req.adminRemark}</p>
+                </div>
+              )}
+              <div className="modal-actions left" style={{ marginTop: "1rem" }}>
+                <Button variant="secondary" onClick={() => viewDetails(req.requestId)}>
+                  View Details
+                </Button>
+              </div>
+            </Card>
+          ))}
         </div>
-        <div className="detail-grid">
-          <div>
-            <span>Child name</span>
-            <b>{parentApplication.childName}</b>
+      )}
+
+      <Modal
+        open={!!selectedDetails}
+        onClose={() => setSelectedDetails(null)}
+        title="Application Details"
+      >
+        {selectedDetails && (
+          <div className="detail-grid" style={{ gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
+            <div>
+              <span>Application Number</span>
+              <b>{selectedDetails.applicationNumber}</b>
+            </div>
+            <div>
+              <span>Child Name</span>
+              <b>{selectedDetails.childName}</b>
+            </div>
+            <div>
+              <span>Child Gender</span>
+              <b>{selectedDetails.childGender || "N/A"}</b>
+            </div>
+            <div>
+              <span>Applied Date</span>
+              <b>{fmt(selectedDetails.requestDate)}</b>
+            </div>
+            <div>
+              <span>Status</span>
+              <Status value={selectedDetails.status} />
+            </div>
+            {selectedDetails.adminRemark && (
+              <div style={{ gridColumn: "span 2" }}>
+                <span>Admin Remark</span>
+                <p style={{ marginTop: "0.25rem", color: "#374151" }}>{selectedDetails.adminRemark}</p>
+              </div>
+            )}
           </div>
-          <div>
-            <span>Applied date</span>
-            <b>{fmt(parentApplication.appliedDate)}</b>
-          </div>
-          <div>
-            <span>Visit date</span>
-            <b>{fmt(parentApplication.visitDate)}</b>
-          </div>
-          <div>
-            <span>Visit time</span>
-            <b>{parentApplication.visitTime}</b>
-          </div>
-          <div>
-            <span>Assigned social worker</span>
-            <b>{parentApplication.socialWorker}</b>
-          </div>
-          <div>
-            <span>Visit status</span>
-            <Status value={parentApplication.visitStatus} />
-          </div>
-        </div>
-        <div className="info-banner card">
-          <strong>Admin remark</strong>
-          <p>{parentApplication.adminRemark}</p>
-        </div>
-      </Card>
+        )}
+      </Modal>
     </>
   );
 }

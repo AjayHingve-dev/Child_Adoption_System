@@ -7,11 +7,15 @@ import com.backend.dto.AdoptionRequestDto;
 import com.backend.dto.AdoptionResponseDto;
 
 public interface AdoptionRequestService {
-	 AdoptionResponseDto submitAdoptionRequest(AdoptionRequestDto requestDto);
-	 
-	 List<AdoptionResponseDto> getRequestsByUser(Long userId);
-	 
-	 AdoptionRequestDetailsResponseDto getRequestDetails(Long requestId);
-	 
-	 void withdrawRequest(Long requestId);
+    AdoptionResponseDto submitAdoptionRequest(AdoptionRequestDto requestDto);
+    
+    AdoptionResponseDto submitAdoptionRequest(AdoptionRequestDto requestDto, Long userId, String email);
+    
+    List<AdoptionResponseDto> getRequestsByUser(Long userId);
+
+    List<AdoptionResponseDto> getMyRequests(Long userId, String email);
+    
+    AdoptionRequestDetailsResponseDto getRequestDetails(Long requestId);
+    
+    void withdrawRequest(Long requestId);
 }
