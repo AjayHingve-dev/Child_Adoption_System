@@ -21,7 +21,9 @@ import {
   ParentProfile,
   ParentDocuments,
   ParentChildren,
+  ParentChildDetails,
   ParentApplications,
+  ParentTrackApplication,
   AdoptionRecord,
   ParentContact,
   SecurityPage,
@@ -134,10 +136,26 @@ export default function App() {
         }
       />
       <Route
+        path="/parent/children/:childId"
+        element={
+          <Parent>
+            <ParentChildDetails />
+          </Parent>
+        }
+      />
+      <Route
         path="/parent/applications"
         element={
           <Parent>
             <ParentApplications />
+          </Parent>
+        }
+      />
+      <Route
+        path="/parent/track-application/:applicationId"
+        element={
+          <Parent>
+            <ParentTrackApplication />
           </Parent>
         }
       />

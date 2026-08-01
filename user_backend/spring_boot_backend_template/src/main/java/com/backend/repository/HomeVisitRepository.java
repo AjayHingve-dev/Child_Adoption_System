@@ -12,4 +12,7 @@ import com.backend.entity.HomeVisit;
 public interface HomeVisitRepository extends JpaRepository<HomeVisit, Long> {
     List<HomeVisit> findByRequestRequestId(Long requestId);
     Optional<HomeVisit> findFirstByRequestRequestIdOrderByCreatedAtDesc(Long requestId);
+    List<HomeVisit> findByRequestUserUserIdOrderByScheduledDateDescScheduledTimeDesc(Long userId);
+    List<HomeVisit> findByRequestUserEmailOrderByScheduledDateDescScheduledTimeDesc(String email);
 }
+

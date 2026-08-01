@@ -1,5 +1,5 @@
 import React, { useCallback, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import {
   Baby,
   ClipboardList,
@@ -43,6 +43,26 @@ const fmt = (d) => (d ? new Date(d).toLocaleDateString("en-IN") : "—");
 export function ParentDashboard() {
   const nav = useNavigate();
   const u = getUser();
+  const [homeVisits, setHomeVisits] = useState([]);
+
+  React.useEffect(() => {
+    const fetchVisits = async () => {
+      try {
+        const userIdParam = (u?.userId || u?.id) ? `?userId=${u.userId || u.id}` : "";
+        const res = await api.get(`/home-visits/my${userIdParam}`);
+        const data = res.data?.data || res.data;
+        if (Array.isArray(data)) {
+          setHomeVisits(data);
+        }
+      } catch (err) {
+        console.warn("Failed to fetch home visits:", errorMessage(err));
+      }
+    };
+    fetchVisits();
+  }, [u?.userId, u?.id]);
+
+  const latestVisit = homeVisits.length > 0 ? homeVisits[0] : null;
+
   return (
     <>
       <PageHeader
@@ -77,8 +97,8 @@ export function ParentDashboard() {
           </div>
           <div>
             <span>Home visit</span>
-            <strong>27 Jul</strong>
-            <small>Scheduled at 10:30 AM</small>
+            <strong>{latestVisit?.visitDate ? fmt(latestVisit.visitDate) : "27 Jul"}</strong>
+            <small>{latestVisit?.visitTime ? `At ${latestVisit.visitTime}` : latestVisit?.status ? `Status: ${latestVisit.status}` : "Scheduled at 10:30 AM"}</small>
           </div>
         </Card>
         <Card className="stat-card tone-3">
@@ -97,14 +117,14 @@ export function ParentDashboard() {
           <div className="card-title">
             <div>
               <span className="eyebrow">Current application</span>
-              <h2>{parentApplication.applicationNumber}</h2>
+              <h2>{latestVisit?.applicationNumber || parentApplication.applicationNumber}</h2>
             </div>
-            <Status value={parentApplication.status} />
+            <Status value={latestVisit?.status || parentApplication.status} />
           </div>
           <div className="detail-grid compact">
             <div>
               <span>Child</span>
-              <b>{parentApplication.childName}</b>
+              <b>{latestVisit?.childName || parentApplication.childName}</b>
             </div>
             <div>
               <span>Applied date</span>
@@ -112,11 +132,11 @@ export function ParentDashboard() {
             </div>
             <div>
               <span>Social worker</span>
-              <b>{parentApplication.socialWorker}</b>
+              <b>{latestVisit?.assignedSocialWorker || parentApplication.socialWorker}</b>
             </div>
             <div>
               <span>Visit status</span>
-              <Status value={parentApplication.visitStatus} />
+              <Status value={latestVisit?.status || parentApplication.visitStatus} />
             </div>
           </div>
           <div className="modal-actions left">
@@ -149,9 +169,9 @@ export function ParentDashboard() {
               <div className="activity-dot" />
               <div>
                 <strong>Prepare for home visit</strong>
-                <p>Your assigned social worker will visit on 27 July.</p>
+                <p>{latestVisit ? `Scheduled for ${fmt(latestVisit.visitDate)} with ${latestVisit.assignedSocialWorker}` : "Your assigned social worker will visit on 27 July."}</p>
               </div>
-              <Status value="SCHEDULED" />
+              <Status value={latestVisit?.status || "SCHEDULED"} />
             </div>
             <div>
               <div className="activity-dot" />
@@ -583,6 +603,7 @@ export function ParentDocuments() {
 }
 
 export function ParentChildren() {
+  const nav = useNavigate();
   const [childrenList, setChildrenList] = useState([]);
   const [loadingList, setLoadingList] = useState(true);
   const [search, setSearch] = useState("");
@@ -736,7 +757,7 @@ export function ParentChildren() {
                     {c.specialNeeds && <span>Special needs</span>}
                   </div>
                   <div className="card-actions parent-actions">
-                    <button onClick={() => openDetailModal(c)}>
+                    <button onClick={() => nav(`/parent/children/${c.childId}`)}>
                       <Eye /> Details
                     </button>
                     <button onClick={() => apply(c)}>
@@ -815,6 +836,7 @@ export function ParentChildren() {
 }
 
 export function ParentApplications() {
+  const nav = useNavigate();
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [trackingData, setTrackingData] = useState(null);
@@ -845,15 +867,7 @@ export function ParentApplications() {
   }, [fetchMyRequests]);
 
   const viewTracking = async (requestId) => {
-    setLoadingTracking(true);
-    try {
-      const res = await api.get(`/adoption-requests/status/${requestId}`);
-      setTrackingData(res.data?.data || res.data);
-    } catch (err) {
-      console.error("Failed to fetch application status tracking:", errorMessage(err));
-    } finally {
-      setLoadingTracking(false);
-    }
+    nav(`/parent/track-application/${requestId}`);
   };
 
   const TRACKING_STEPS = ["PENDING", "UNDER_REVIEW", "HOME_VISIT", "APPROVED", "COMPLETED"];
@@ -1117,6 +1131,405 @@ export function SecurityPage() {
         </form>
       </Card>
       <Toast toast={toast} onClose={() => setToast(null)} />
+    </>
+  );
+}
+
+export function ParentChildDetails() {
+  const { childId } = useParams();
+  const nav = useNavigate();
+  const [child, setChild] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [toast, setToast] = useState(null);
+
+  const fetchChildDetails = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await api.get(`/children/${childId}`);
+      const data = res.data?.data || res.data;
+      if (data) {
+        setChild(data);
+      } else {
+        setError("Child details not found.");
+      }
+    } catch (err) {
+      console.warn("Error fetching child details, checking fallback data:", err);
+      const found = initialChildren.find((c) => String(c.childId) === String(childId));
+      if (found) {
+        setChild(found);
+      } else {
+        setError(errorMessage(err) || "Failed to load child details.");
+      }
+    } finally {
+      setLoading(false);
+    }
+  }, [childId]);
+
+  React.useEffect(() => {
+    fetchChildDetails();
+  }, [fetchChildDetails]);
+
+  const apply = async (c) => {
+    const user = getUser();
+    if (!user || user.role !== "PARENT") {
+      setToast({ type: "error", message: "Only registered parent candidates can submit adoption requests." });
+      return;
+    }
+    try {
+      const payload = {
+        userId: user.userId || user.id,
+        childId: c.childId,
+      };
+      const res = await api.post("/adoption-requests", payload);
+      const data = res.data?.data || res.data;
+      setToast({ message: data?.message || `Adoption request submitted successfully for ${c.name || c.firstName}!` });
+    } catch (err) {
+      setToast({ type: "error", message: errorMessage(err) });
+    }
+  };
+
+  if (loading) {
+    return <Loading label="Loading child details..." />;
+  }
+
+  if (error || !child) {
+    return (
+      <Card>
+        <div className="empty">
+          <Baby size={44} />
+          <h3>Child Not Found</h3>
+          <p>{error || "Unable to retrieve child information."}</p>
+          <Button onClick={() => nav("/parent/children")}>Back to Available Children</Button>
+        </div>
+      </Card>
+    );
+  }
+
+  const childName = child.name || `${child.firstName || ''} ${child.lastName || ''}`.trim();
+  const photo = child.image || child.profilePhoto || "https://images.unsplash.com/photo-1595454223600-91fbddbbf255?auto=format&fit=crop&w=600&q=80";
+
+  return (
+    <>
+      <PageHeader
+        eyebrow="Parent portal"
+        title={childName}
+        description="Detailed profile and background information for adoption request."
+      />
+      <div style={{ marginBottom: "1rem" }}>
+        <Button variant="secondary" onClick={() => nav("/parent/children")}>
+          ← Back to Available Children
+        </Button>
+      </div>
+
+      <Card>
+        <div className="child-detail-hero" style={{ display: "flex", gap: "1.5rem", alignItems: "center", marginBottom: "1.5rem", paddingBottom: "1.5rem", borderBottom: "1px solid var(--line)" }}>
+          <img
+            src={photo}
+            alt={childName}
+            style={{ width: "160px", height: "160px", objectFit: "cover", borderRadius: "16px" }}
+          />
+          <div>
+            <h2 style={{ fontSize: "1.75rem", margin: "0 0 0.5rem 0" }}>{childName}</h2>
+            <div style={{ display: "flex", gap: "0.5rem", alignItems: "center", marginBottom: "0.5rem" }}>
+              <Status value={child.status || "AVAILABLE"} />
+              {child.specialNeeds && <Status value="Special Needs" />}
+            </div>
+            <p style={{ color: "var(--muted)", margin: 0 }}>
+              Gender: <b>{child.gender || 'N/A'}</b> · Age: <b>{child.age != null ? `${child.age} years` : 'N/A'}</b>
+            </p>
+          </div>
+        </div>
+
+        <h3 style={{ marginBottom: "1rem" }}>Complete Child Information</h3>
+        <div className="detail-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "1.25rem", marginBottom: "1.5rem" }}>
+          <div>
+            <span>Photo / Avatar</span>
+            <b>{photo ? "Available" : "N/A"}</b>
+          </div>
+          <div>
+            <span>Full Name</span>
+            <b>{childName}</b>
+          </div>
+          <div>
+            <span>Age</span>
+            <b>{child.age != null ? `${child.age} years` : 'N/A'}</b>
+          </div>
+          <div>
+            <span>Gender</span>
+            <b>{child.gender || 'N/A'}</b>
+          </div>
+          <div>
+            <span>Blood Group</span>
+            <b>{child.bloodGroup || 'N/A'}</b>
+          </div>
+          <div>
+            <span>Date of Birth</span>
+            <b>{child.dob ? fmt(child.dob) : 'N/A'}</b>
+          </div>
+          <div>
+            <span>Education</span>
+            <b>{child.education || 'Primary Education'}</b>
+          </div>
+          <div>
+            <span>Medical Condition</span>
+            <b>{child.medicalSummary || child.medicalNotes || 'Healthy / Good condition'}</b>
+          </div>
+          <div>
+            <span>Hobbies</span>
+            <b>{child.hobbies || 'Drawing, Music'}</b>
+          </div>
+          <div>
+            <span>Special Needs</span>
+            <b>{child.specialNeeds ? "Yes (Requires special care)" : "No"}</b>
+          </div>
+          <div>
+            <span>Availability Status</span>
+            <b>{child.status || "AVAILABLE"}</b>
+          </div>
+        </div>
+
+        {child.description && (
+          <div style={{ marginBottom: "1.5rem" }}>
+            <span>Description</span>
+            <div className="description-box" style={{ marginTop: "0.5rem" }}>
+              {child.description}
+            </div>
+          </div>
+        )}
+
+        <div className="modal-actions left" style={{ marginTop: "1rem" }}>
+          <Button onClick={() => apply(child)}>
+            <ClipboardList size={16} /> Submit Adoption Application
+          </Button>
+          <Button variant="secondary" onClick={() => nav("/parent/children")}>
+            Back to Available Children
+          </Button>
+        </div>
+      </Card>
+      <Toast toast={toast} onClose={() => setToast(null)} />
+    </>
+  );
+}
+
+export function ParentTrackApplication() {
+  const { applicationId } = useParams();
+  const nav = useNavigate();
+  const [trackingData, setTrackingData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  const fetchTracking = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await api.get(`/adoption-requests/status/${applicationId}`);
+      const data = res.data?.data || res.data;
+      if (data) {
+        setTrackingData(data);
+      } else {
+        setError("Application tracking data not found.");
+      }
+    } catch (err) {
+      console.warn("Failed to fetch status tracking by ID, trying details endpoint:", err);
+      try {
+        const resDetails = await api.get(`/adoption-requests/${applicationId}`);
+        const dataDetails = resDetails.data?.data || resDetails.data;
+        if (dataDetails) {
+          setTrackingData(dataDetails);
+        } else {
+          setError(errorMessage(err) || "Failed to load application details.");
+        }
+      } catch (err2) {
+        setError(errorMessage(err2) || "Failed to load tracking data.");
+      }
+    } finally {
+      setLoading(false);
+    }
+  }, [applicationId]);
+
+  React.useEffect(() => {
+    fetchTracking();
+  }, [fetchTracking]);
+
+  const TRACKING_STEPS = ["PENDING", "UNDER_REVIEW", "HOME_VISIT", "APPROVED", "COMPLETED"];
+
+  if (loading) {
+    return <Loading label="Loading application tracking details..." />;
+  }
+
+  if (error || !trackingData) {
+    return (
+      <Card>
+        <div className="empty">
+          <ClipboardList size={44} />
+          <h3>Application Not Found</h3>
+          <p>{error || "Unable to retrieve tracking information."}</p>
+          <Button onClick={() => nav("/parent/applications")}>Back to Applications</Button>
+        </div>
+      </Card>
+    );
+  }
+
+  const currentStatus = trackingData.status || "PENDING";
+  const isRejected = currentStatus === "REJECTED";
+
+  return (
+    <>
+      <PageHeader
+        eyebrow="Parent portal"
+        title={`Application Tracking: ${trackingData.applicationNumber || applicationId}`}
+        description="Step-by-step progress tracking, live timeline, and home visit assessment status."
+      />
+      <div style={{ marginBottom: "1rem" }}>
+        <Button variant="secondary" onClick={() => nav("/parent/applications")}>
+          ← Back to My Applications
+        </Button>
+      </div>
+
+      <Card>
+        <div className="card-title">
+          <div>
+            <span className="eyebrow">Application Number</span>
+            <h2>{trackingData.applicationNumber || `APP-${applicationId}`}</h2>
+          </div>
+          <Status value={currentStatus} />
+        </div>
+
+        <div className="detail-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "1rem", margin: "1.25rem 0" }}>
+          <div>
+            <span>Application Number</span>
+            <b>{trackingData.applicationNumber || applicationId}</b>
+          </div>
+          <div>
+            <span>Child Name</span>
+            <b>{trackingData.childName || "N/A"}</b>
+          </div>
+          <div>
+            <span>Applied Date</span>
+            <b>{fmt(trackingData.requestDate || trackingData.appliedDate)}</b>
+          </div>
+          <div>
+            <span>Current Status</span>
+            <b><Status value={currentStatus} /></b>
+          </div>
+          {trackingData.socialWorkerName && (
+            <div>
+              <span>Assigned Social Worker</span>
+              <b>{trackingData.socialWorkerName}</b>
+            </div>
+          )}
+          {trackingData.visitDate && (
+            <div>
+              <span>Home Visit Date</span>
+              <b>{fmt(trackingData.visitDate)} {trackingData.visitTime ? `at ${trackingData.visitTime}` : ""}</b>
+            </div>
+          )}
+        </div>
+
+        {/* Live Timeline Display */}
+        <div style={{ marginTop: "2rem", marginBottom: "2rem" }}>
+          <h3 style={{ marginBottom: "1rem" }}>Application Progress Timeline</h3>
+          <div className="journey-timeline">
+            {(isRejected ? ["PENDING", "UNDER_REVIEW", "HOME_VISIT", "REJECTED"] : TRACKING_STEPS).map((s, i) => {
+              const statusOrder = isRejected
+                ? ["PENDING", "UNDER_REVIEW", "HOME_VISIT", "REJECTED"]
+                : TRACKING_STEPS;
+              const currentIndex = statusOrder.indexOf(currentStatus);
+              const stepIndex = statusOrder.indexOf(s);
+              const isDone = stepIndex !== -1 && stepIndex <= currentIndex;
+              const isCurrent = currentStatus === s;
+
+              return (
+                <div className={isDone ? "done" : isCurrent ? "current" : ""} key={s}>
+                  <i>{isDone ? "✓" : i + 1}</i>
+                  <span>{s === "REJECTED" ? "REJECTED" : s.replaceAll("_", " ")}</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Detailed Stage Log if available */}
+        {trackingData.timeline && trackingData.timeline.length > 0 && (
+          <div style={{ marginTop: "1.5rem" }}>
+            <h4 style={{ marginBottom: "0.75rem" }}>Detailed Stage Log</h4>
+            <div style={{ display: "grid", gap: "0.75rem" }}>
+              {trackingData.timeline.map((step) => (
+                <div
+                  key={step.stepKey}
+                  style={{
+                    display: "flex",
+                    alignItems: "flex-start",
+                    gap: "0.75rem",
+                    padding: "0.75rem 1rem",
+                    borderRadius: "8px",
+                    background: step.current ? "#eff6ff" : step.completed ? "#f9fafb" : "#ffffff",
+                    border: step.current ? "1px solid #3b82f6" : "1px solid #e5e7eb",
+                  }}
+                >
+                  <div
+                    style={{
+                      width: "24px",
+                      height: "24px",
+                      borderRadius: "50%",
+                      background: step.completed ? "#10b981" : step.current ? "#3b82f6" : "#e5e7eb",
+                      color: "#fff",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      fontSize: "0.75rem",
+                      fontWeight: "bold",
+                      flexShrink: 0,
+                    }}
+                  >
+                    {step.completed ? "✓" : "•"}
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                      <strong style={{ color: step.current ? "#1d4ed8" : "#111827" }}>{step.label}</strong>
+                      {step.updatedAt && (
+                        <small style={{ color: "#6b7280" }}>Updated: {fmt(step.updatedAt)}</small>
+                      )}
+                    </div>
+                    <p style={{ margin: "0.25rem 0 0 0", fontSize: "0.85rem", color: "#4b5563" }}>
+                      {step.description}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Home Visit Assessment Details banner if available */}
+        {trackingData.socialWorkerName && (
+          <div className="info-banner card" style={{ marginTop: "1.5rem" }}>
+            <strong>Home Visit Assessment Details</strong>
+            <p style={{ margin: "0.25rem 0 0 0", fontSize: "0.9rem" }}>
+              Assigned Worker: <b>{trackingData.socialWorkerName}</b>
+              {trackingData.visitDate && <> · Date: <b>{fmt(trackingData.visitDate)}</b></>}
+              {trackingData.visitTime && <> · Time: <b>{trackingData.visitTime}</b></>}
+              {trackingData.visitStatus && <> · Status: <b>{trackingData.visitStatus}</b></>}
+            </p>
+          </div>
+        )}
+
+        {/* Admin Remark if available */}
+        {trackingData.adminRemark && (
+          <div className="info-banner card" style={{ background: "#fffbe6", borderColor: "#ffe58f", marginTop: "1rem" }}>
+            <strong>Admin Remark</strong>
+            <p style={{ margin: "0.25rem 0 0 0" }}>{trackingData.adminRemark}</p>
+          </div>
+        )}
+
+        <div className="modal-actions left" style={{ marginTop: "1.5rem" }}>
+          <Button variant="secondary" onClick={() => nav("/parent/applications")}>
+            Back to Applications
+          </Button>
+        </div>
+      </Card>
     </>
   );
 }
