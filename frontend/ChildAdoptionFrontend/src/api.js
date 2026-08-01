@@ -21,7 +21,8 @@ api.interceptors.request.use(config => {
     config.url.startsWith('/children') ||
     config.url.startsWith('/adoption-requests') ||
     config.url.startsWith('/user-documents') ||
-    config.url.startsWith('/documents')
+    config.url.startsWith('/documents') ||
+    config.url.startsWith('/home-visits')
   )) {
     config.baseURL = PARENT_API_URL;
   }
