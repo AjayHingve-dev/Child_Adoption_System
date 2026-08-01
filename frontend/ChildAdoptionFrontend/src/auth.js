@@ -7,13 +7,27 @@ export const getUser = () => {
 };
 
 export const saveSession = (data) => {
-  localStorage.setItem('token', data.token || 'demo-jwt-token');
+  if (data.token) {
+    localStorage.setItem('token', data.token);
+  } else {
+    localStorage.setItem('token', 'demo-jwt-token');
+  }
+
+  const userId = data.userId || data.id || null;
+  const firstName = data.firstName || '';
+  const lastName = data.lastName || '';
+  const fullName = data.fullName || `${firstName} ${lastName}`.trim() || 'Parent User';
+
   localStorage.setItem(
     'user',
     JSON.stringify({
-      fullName: data.fullName || 'User',
-      email: data.email || 'user@aashray.org',
-      role: data.role || 'ADMIN',
+      userId: userId,
+      firstName: firstName,
+      lastName: lastName,
+      fullName: fullName,
+      email: data.email || '',
+      phone: data.phone || '',
+      role: data.role || 'PARENT',
     })
   );
 };

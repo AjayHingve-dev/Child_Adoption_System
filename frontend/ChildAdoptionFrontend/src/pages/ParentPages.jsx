@@ -14,6 +14,9 @@ import {
   Send,
   Save,
   LockKeyhole,
+  Trash2,
+  ExternalLink,
+  Download,
 } from "lucide-react";
 import {
   PageHeader,
@@ -368,44 +371,212 @@ export function ParentProfile() {
   );
 }
 
+const REQUIRED_DOCUMENTS = [
+  { type: "Aadhaar", name: "Aadhaar Card", description: "Government issued identity proof (PDF, JPG, PNG)" },
+  { type: "PAN", name: "PAN Card", description: "Permanent Account Number card (PDF, JPG, PNG)" },
+  { type: "Income Certificate", name: "Income Certificate", description: "Proof of annual income / salary slip (PDF, JPG, PNG)" },
+  { type: "Marriage Certificate", name: "Marriage Certificate", description: "Legal marriage certificate (PDF, JPG, PNG)" },
+  { type: "Medical Certificate", name: "Medical Certificate", description: "Medical fitness certificate (PDF, JPG, PNG)" },
+];
+
 export function ParentDocuments() {
-  const [docs, setDocs] = useState(initialDocs);
+  const currentUser = getUser();
+  const isRegisteredParent = Boolean(currentUser && currentUser.role === "PARENT" && (currentUser.userId || currentUser.email));
+  const [userDocs, setUserDocs] = useState([]);
+  const [loading, setLoading] = useState(isRegisteredParent);
+  const [uploadingType, setUploadingType] = useState(null);
+  const [deletingId, setDeletingId] = useState(null);
   const [toast, setToast] = useState(null);
-  const upload = (id) => {
-    setDocs(
-      docs.map((d) =>
-        d.id === id
-          ? { ...d, status: "PENDING", fileName: "new_upload.pdf" }
-          : d,
-      ),
-    );
-    setToast({ message: "Document uploaded for verification" });
+
+  const fetchDocuments = useCallback(async () => {
+    if (!isRegisteredParent) return;
+    setLoading(true);
+    try {
+      const userIdParam = (currentUser?.userId || currentUser?.id) ? `?userId=${currentUser.userId || currentUser.id}` : "";
+      const res = await api.get(`/documents${userIdParam}`);
+      const data = res.data?.data || res.data;
+      if (Array.isArray(data)) {
+        setUserDocs(data);
+      } else {
+        setUserDocs([]);
+      }
+    } catch (err) {
+      console.warn("Failed to fetch documents from API:", errorMessage(err));
+      setUserDocs([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [isRegisteredParent, currentUser?.userId, currentUser?.id]);
+
+  React.useEffect(() => {
+    fetchDocuments();
+  }, [fetchDocuments]);
+
+  const handleUpload = async (docType, file) => {
+    if (!isRegisteredParent) {
+      setToast({ type: "error", message: "Only registered parent users can upload documents. Please register or sign in." });
+      return;
+    }
+
+    if (!file) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      setToast({ type: "error", message: "File size exceeds maximum allowed limit of 5MB." });
+      return;
+    }
+
+    const validExtensions = ["pdf", "jpg", "jpeg", "png"];
+    const ext = file.name.split(".").pop().toLowerCase();
+    if (!validExtensions.includes(ext)) {
+      setToast({ type: "error", message: "Invalid file format. Only PDF, JPG, and PNG files are allowed." });
+      return;
+    }
+
+    setUploadingType(docType);
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("documentType", docType);
+    if (currentUser?.userId || currentUser?.id) {
+      formData.append("userId", currentUser.userId || currentUser.id);
+    }
+
+    try {
+      await api.post("/documents/upload", formData);
+      setToast({ message: `${docType} uploaded successfully!` });
+      fetchDocuments();
+    } catch (err) {
+      setToast({ type: "error", message: `Upload failed: ${errorMessage(err)}` });
+    } finally {
+      setUploadingType(null);
+    }
   };
+
+  const handleDelete = async (docId, docType) => {
+    if (!window.confirm(`Are you sure you want to delete your ${docType}?`)) return;
+    setDeletingId(docId);
+    try {
+      const currentUser = getUser();
+      const userIdParam = (currentUser?.userId || currentUser?.id) ? `?userId=${currentUser.userId || currentUser.id}` : "";
+      await api.delete(`/documents/${docId}${userIdParam}`);
+      setToast({ message: `${docType} deleted successfully!` });
+      fetchDocuments();
+    } catch (err) {
+      setToast({ message: `Delete failed: ${errorMessage(err)}` });
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
+  const getDocForType = (type) => {
+    return userDocs.find(
+      (d) => d.documentType && d.documentType.toLowerCase() === type.toLowerCase()
+    );
+  };
+
+  const getFileUrl = (filePath) => {
+    if (!filePath) return "#";
+    if (filePath.startsWith("http")) return filePath;
+    const parentApiHost = import.meta.env.VITE_PARENT_API_URL
+      ? import.meta.env.VITE_PARENT_API_URL.replace(/\/api\/?$/, "")
+      : "http://localhost:8082";
+    return `${parentApiHost}/${filePath.startsWith("/") ? filePath.slice(1) : filePath}`;
+  };
+
   return (
     <>
       <PageHeader
         eyebrow="Parent portal"
         title="Required Documents"
-        description="Upload clear PDF or image copies. Admin verification starts after submission."
+        description="Upload clear PDF, JPG, or PNG copies (max 5MB each). Admin verification starts after submission."
       />
-      <div className="document-grid">
-        {docs.map((d) => (
-          <Card key={d.id} className="document-card">
-            <div className="document-icon">
-              <FileText />
-            </div>
-            <div>
-              <h3>{d.name}</h3>
-              <p>{d.fileName}</p>
-              <Status value={d.status} />
-            </div>
-            <label className="btn secondary file-button">
-              <Upload size={15} /> Upload
-              <input type="file" onChange={() => upload(d.id)} />
-            </label>
-          </Card>
-        ))}
-      </div>
+
+      {!isRegisteredParent && (
+        <Card style={{ marginBottom: "1.5rem", borderLeft: "4px solid #ef4444", background: "#fef2f2" }}>
+          <h4 style={{ margin: 0, color: "#991b1b" }}>Registration Required</h4>
+          <p style={{ margin: "0.25rem 0 0.75rem 0", color: "#b91c1c", fontSize: "0.9rem" }}>
+            Only registered parent candidates can upload and manage documents. Please register a parent account or log in to continue.
+          </p>
+          <div style={{ display: "flex", gap: "0.5rem" }}>
+            <Button onClick={() => nav("/parent/register")}>Register Parent Account</Button>
+            <Button variant="secondary" onClick={() => nav("/login")}>Sign In</Button>
+          </div>
+        </Card>
+      )}
+
+      {loading ? (
+        <Loading label="Loading documents..." />
+      ) : (
+        <div className="document-grid">
+          {REQUIRED_DOCUMENTS.map((reqDoc) => {
+            const uploaded = getDocForType(reqDoc.type);
+            const isUploading = uploadingType === reqDoc.type;
+            const isDeleting = uploaded && deletingId === uploaded.documentId;
+
+            return (
+              <Card key={reqDoc.type} className="document-card">
+                <div className="document-icon">
+                  <FileText />
+                </div>
+                <div>
+                  <h3>{reqDoc.name}</h3>
+                  <p>{uploaded ? uploaded.fileName : reqDoc.description}</p>
+                  <Status value={uploaded ? uploaded.verificationStatus : "NOT_UPLOADED"} />
+                  {uploaded?.uploadedAt && (
+                    <small style={{ display: "block", marginTop: "0.25rem", color: "#6b7280" }}>
+                      Uploaded on {fmt(uploaded.uploadedAt)}
+                    </small>
+                  )}
+                </div>
+
+                <div className="document-actions" style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
+                  {uploaded && (
+                    <>
+                      <a
+                        href={getFileUrl(uploaded.filePath)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="btn secondary square"
+                        title="View / Download Document"
+                      >
+                        <ExternalLink size={15} />
+                      </a>
+
+                      {uploaded.verificationStatus !== "VERIFIED" && (
+                        <button
+                          type="button"
+                          className="btn secondary square danger"
+                          onClick={() => handleDelete(uploaded.documentId, reqDoc.name)}
+                          disabled={isDeleting}
+                          title="Delete Document"
+                        >
+                          <Trash2 size={15} />
+                        </button>
+                      )}
+                    </>
+                  )}
+
+                  {(!uploaded || uploaded.verificationStatus !== "VERIFIED") && (
+                    <label className={`btn ${uploaded ? "secondary" : "primary"} file-button`}>
+                      <Upload size={15} /> {isUploading ? "Uploading..." : uploaded ? "Re-upload" : "Upload"}
+                      <input
+                        type="file"
+                        accept=".pdf,.jpg,.jpeg,.png"
+                        disabled={isUploading}
+                        onChange={(e) => {
+                          if (e.target.files && e.target.files[0]) {
+                            handleUpload(reqDoc.type, e.target.files[0]);
+                            e.target.value = "";
+                          }
+                        }}
+                      />
+                    </label>
+                  )}
+                </div>
+              </Card>
+            );
+          })}
+        </div>
+      )}
       <Toast toast={toast} onClose={() => setToast(null)} />
     </>
   );
