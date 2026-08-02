@@ -7,6 +7,7 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
+builder.WebHost.UseUrls("http://localhost:5080");
 
 var connectionString = builder.Configuration.GetConnectionString("Default");
 if (string.IsNullOrWhiteSpace(connectionString))
@@ -107,7 +108,34 @@ var app = builder.Build();
 app.UseSwagger();
 app.UseSwaggerUI();
 
-app.UseStaticFiles();
+var searchLocations = new[]
+{
+    Path.GetFullPath(Path.Combine(builder.Environment.ContentRootPath, "..", "..", "..", "..", "..", "user_backend", "spring_boot_backend_template", "uploads")),
+    Path.GetFullPath(Path.Combine(builder.Environment.ContentRootPath, "..", "..", "..", "..", "user_backend", "spring_boot_backend_template", "uploads")),
+    @"D:\cdac\prfi\Child_Adoption_System\user_backend\spring_boot_backend_template\uploads"
+};
+
+var uploadsPathUserBackend = searchLocations.FirstOrDefault(Directory.Exists);
+if (!string.IsNullOrEmpty(uploadsPathUserBackend))
+{
+    app.UseStaticFiles(new StaticFileOptions
+    {
+        FileProvider = new Microsoft.Extensions.FileProviders.PhysicalFileProvider(uploadsPathUserBackend),
+        RequestPath = "/uploads"
+    });
+}
+
+var uploadsPathAdmin = Path.Combine(builder.Environment.ContentRootPath, "uploads");
+if (!Directory.Exists(uploadsPathAdmin))
+{
+    Directory.CreateDirectory(uploadsPathAdmin);
+}
+app.UseStaticFiles(new StaticFileOptions
+{
+    FileProvider = new Microsoft.Extensions.FileProviders.PhysicalFileProvider(uploadsPathAdmin),
+    RequestPath = "/uploads"
+});
+
 app.UseCors("AdminPortal");
 app.UseAuthentication();
 app.UseAuthorization();

@@ -34,17 +34,35 @@ public class ChildrenController : ControllerBase
         var child=await _db.Children.AsNoTracking().FirstOrDefaultAsync(x=>x.ChildId==id);
         if(child is null)return NotFound(new{message="Child not found."});
 
-        var medical=await _db.ChildMedicalHistories.AsNoTracking()
-            .Where(x=>x.ChildId==id)
-            .Select(x=>new ChildMedicalHistoryResponse(x.MedicalId,x.Disease,x.Allergy,x.Treatment,x.DoctorName))
-            .ToListAsync();
-        var vaccinations=await _db.Vaccinations.AsNoTracking()
-            .Where(x=>x.ChildId==id)
-            .Select(x=>new VaccinationResponse(x.VaccinationId,x.VaccineName,x.VaccineDate))
-            .ToListAsync();
-        var requestCount=await _db.AdoptionRequests.CountAsync(x=>x.ChildId==id);
+        List<ChildMedicalHistoryResponse> medical;
+        try
+        {
+            medical = await _db.ChildMedicalHistories.AsNoTracking()
+                .Where(x => x.ChildId == id)
+                .Select(x => new ChildMedicalHistoryResponse(x.MedicalId, x.Disease, x.Allergy, x.Treatment, x.DoctorName))
+                .ToListAsync();
+        }
+        catch
+        {
+            medical = new List<ChildMedicalHistoryResponse>();
+        }
 
-        return Ok(new ChildDetailResponse(Map(child),medical,vaccinations,requestCount));
+        List<VaccinationResponse> vaccinations;
+        try
+        {
+            vaccinations = await _db.Vaccinations.AsNoTracking()
+                .Where(x => x.ChildId == id)
+                .Select(x => new VaccinationResponse(x.VaccinationId, x.VaccineName, x.VaccineDate))
+                .ToListAsync();
+        }
+        catch
+        {
+            vaccinations = new List<VaccinationResponse>();
+        }
+
+        var requestCount = await _db.AdoptionRequests.CountAsync(x => x.ChildId == id);
+
+        return Ok(new ChildDetailResponse(Map(child), medical, vaccinations, requestCount));
     }
 
     [HttpPost]
@@ -62,14 +80,31 @@ public class ChildrenController : ControllerBase
     }
 
     [HttpPut("{id:long}")]
-    public async Task<ActionResult<ChildResponse>> Update(long id,UpdateChildRequest r)
+    public async Task<ActionResult<ChildResponse>> Update(long id, UpdateChildRequest r)
     {
-        var c=await _db.Children.FindAsync(id);if(c is null)return NotFound(new{message="Child not found."});
-        var status=(r.Status??c.Status).Trim().ToUpperInvariant();if(!Statuses.Contains(status))return BadRequest(new{message="Invalid child status."});
-        c.HealthStatus=r.HealthStatus?.Trim();c.Education=r.Education?.Trim();c.MedicalNotes=r.MedicalNotes?.Trim();c.SpecialNeeds=r.SpecialNeeds??c.SpecialNeeds;c.Description=r.Description?.Trim();
-        if(!string.IsNullOrWhiteSpace(r.ProfilePhoto))c.ProfilePhoto=r.ProfilePhoto;
-        c.Status=status;
-        await _db.SaveChangesAsync();return Ok(Map(c));
+        var c = await _db.Children.FindAsync(id);
+        if (c is null) return NotFound(new { message = "Child not found." });
+
+        if (!string.IsNullOrWhiteSpace(r.FirstName)) c.FirstName = r.FirstName.Trim();
+        if (r.LastName != null) c.LastName = string.IsNullOrWhiteSpace(r.LastName) ? null : r.LastName.Trim();
+        if (!string.IsNullOrWhiteSpace(r.Gender)) c.Gender = r.Gender.Trim().ToUpperInvariant();
+        if (r.Dob.HasValue) c.Dob = r.Dob.Value.Date;
+        if (!string.IsNullOrWhiteSpace(r.BloodGroup)) c.BloodGroup = r.BloodGroup.Trim().ToUpperInvariant();
+
+        c.HealthStatus = r.HealthStatus?.Trim();
+        c.Education = r.Education?.Trim();
+        c.MedicalNotes = r.MedicalNotes?.Trim();
+        c.Hobbies = r.Hobbies?.Trim();
+        c.SpecialNeeds = r.SpecialNeeds ?? c.SpecialNeeds;
+        c.Description = r.Description?.Trim();
+        if (!string.IsNullOrWhiteSpace(r.ProfilePhoto)) c.ProfilePhoto = r.ProfilePhoto;
+
+        var status = (r.Status ?? c.Status).Trim().ToUpperInvariant();
+        if (!Statuses.Contains(status)) return BadRequest(new { message = "Invalid child status." });
+        c.Status = status;
+
+        await _db.SaveChangesAsync();
+        return Ok(Map(c));
     }
 
     [HttpPost("{id:long}/photo")]

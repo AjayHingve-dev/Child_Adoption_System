@@ -248,8 +248,9 @@ public record CreateChildRequest(
     string? Education, string? Hobbies, string? Description, string? ProfilePhoto,
     DateTime? AdmissionDate, string? Status);
 public record UpdateChildRequest(
-    string? HealthStatus, string? Education, string? MedicalNotes, bool? SpecialNeeds,
-    string? Description, string? ProfilePhoto, string Status);
+    string? FirstName, string? LastName, string? Gender, DateTime? Dob,
+    string? BloodGroup, string? HealthStatus, string? Education, string? MedicalNotes,
+    bool? SpecialNeeds, string? Hobbies, string? Description, string? ProfilePhoto, string Status);
 public record ChildResponse(
     long ChildId, string FirstName, string? LastName, string? Gender, DateTime? Dob, int? Age,
     string? BloodGroup, string? HealthStatus, string? MedicalNotes, bool SpecialNeeds,

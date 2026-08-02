@@ -99,6 +99,58 @@ public class AuthController : ControllerBase
     [HttpPost("logout")]
     public ActionResult<LogoutResponse> Logout() => Ok(new LogoutResponse("Logged out successfully."));
 
+    [Authorize(Roles = "ADMIN,SUPER_ADMIN")]
+    [HttpGet("me")]
+    public async Task<ActionResult<AdminResponse>> GetMe()
+    {
+        var emailClaim = User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value;
+        if (string.IsNullOrEmpty(emailClaim)) return Unauthorized();
+
+        var admin = await _db.Admins.FirstOrDefaultAsync(a => a.Email == emailClaim);
+        if (admin is null) return NotFound(new { message = "Admin not found." });
+
+        return Ok(new AdminResponse(admin.AdminId, admin.FirstName, admin.LastName, admin.Email, admin.Phone, admin.Role, admin.Status, admin.CreatedAt));
+    }
+
+    [Authorize(Roles = "ADMIN,SUPER_ADMIN")]
+    [HttpPut("profile")]
+    public async Task<ActionResult<AdminResponse>> UpdateProfile(UpdateAdminProfileRequest r)
+    {
+        var emailClaim = User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value;
+        if (string.IsNullOrEmpty(emailClaim)) return Unauthorized();
+
+        var admin = await _db.Admins.FirstOrDefaultAsync(a => a.Email == emailClaim);
+        if (admin is null) return NotFound(new { message = "Admin not found." });
+
+        if (!string.IsNullOrWhiteSpace(r.FirstName)) admin.FirstName = r.FirstName.Trim();
+        if (r.LastName != null) admin.LastName = NullIfWhiteSpace(r.LastName);
+        if (!string.IsNullOrWhiteSpace(r.Phone)) admin.Phone = r.Phone.Trim();
+
+        await _db.SaveChangesAsync();
+        return Ok(new AdminResponse(admin.AdminId, admin.FirstName, admin.LastName, admin.Email, admin.Phone, admin.Role, admin.Status, admin.CreatedAt));
+    }
+
+    [Authorize(Roles = "ADMIN,SUPER_ADMIN")]
+    [HttpPost("change-password")]
+    public async Task<ActionResult> ChangePassword(ChangePasswordRequest r)
+    {
+        var emailClaim = User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value;
+        if (string.IsNullOrEmpty(emailClaim)) return Unauthorized();
+
+        var admin = await _db.Admins.FirstOrDefaultAsync(a => a.Email == emailClaim);
+        if (admin is null) return NotFound(new { message = "Admin not found." });
+
+        if (!BCrypt.Net.BCrypt.Verify(r.CurrentPassword, admin.Password))
+            return BadRequest(new { message = "Current password is incorrect." });
+
+        if (!IsStrongPassword(r.NewPassword))
+            return BadRequest(new { message = "New password must be at least 8 characters and include uppercase, lowercase, number, and special character." });
+
+        admin.Password = BCrypt.Net.BCrypt.HashPassword(r.NewPassword);
+        await _db.SaveChangesAsync();
+        return Ok(new { message = "Password changed successfully." });
+    }
+
     private static bool IsStrongPassword(string? password) =>
         !string.IsNullOrWhiteSpace(password) && password.Length >= 8 &&
         password.Any(char.IsUpper) && password.Any(char.IsLower) &&

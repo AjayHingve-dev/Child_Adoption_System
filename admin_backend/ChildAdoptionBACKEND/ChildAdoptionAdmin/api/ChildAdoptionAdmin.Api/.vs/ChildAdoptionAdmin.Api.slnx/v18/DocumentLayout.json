@@ -32,7 +32,7 @@
               "RelativeDocumentMoniker": "Controllers\\DashboardController.cs",
               "ToolTip": "D:\\cdac\\prfi\\Child_Adoption_System\\admin_backend\\ChildAdoptionBACKEND\\ChildAdoptionAdmin\\api\\ChildAdoptionAdmin.Api\\Controllers\\DashboardController.cs",
               "RelativeToolTip": "Controllers\\DashboardController.cs",
-              "ViewState": "AgIAABAAAAAAAAAAAAAgwAAAAAAAAAAAAAAAAA==",
+              "ViewState": "AgIAABEAAAAAAAAAAAAQwBsAAABNAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2026-07-29T11:58:56.729Z",
               "EditorCaption": ""
@@ -47,8 +47,7 @@
               "RelativeToolTip": "Controllers\\ParentsController.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAgAAAABAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-07-29T11:58:42.188Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-07-29T11:58:42.188Z"
             },
             {
               "$type": "Document",
@@ -60,8 +59,7 @@
               "RelativeToolTip": "Controllers\\AdminsController.cs",
               "ViewState": "AgIAAB0AAAAAAAAAAAAIwAAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-07-29T11:58:25.166Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-07-29T11:58:25.166Z"
             }
           ]
         }
