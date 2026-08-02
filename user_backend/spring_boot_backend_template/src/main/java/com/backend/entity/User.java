@@ -69,6 +69,7 @@ public class User {
 
     private String pincode;
 
+    @Column(columnDefinition="LONGTEXT")
     private String profilePhoto;
 
     @Enumerated(EnumType.STRING)

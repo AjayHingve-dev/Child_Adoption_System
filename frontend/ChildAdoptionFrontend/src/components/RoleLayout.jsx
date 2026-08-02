@@ -102,8 +102,12 @@ export default function RoleLayout({ children, role }) {
             }
             className="mini-profile profile-link"
           >
-            <div className="avatar">
-              {user?.fullName?.[0] || "U"}
+            <div className="avatar" style={{ overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              {user?.profilePhoto ? (
+                <img src={user.profilePhoto} alt="Avatar" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+              ) : (
+                user?.fullName?.[0] || "U"
+              )}
             </div>
 
             <div>
