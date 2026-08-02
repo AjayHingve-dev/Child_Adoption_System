@@ -23,6 +23,8 @@ api.interceptors.request.use(config => {
   const isParentPortalRoute = config.url && (
     config.url.startsWith('/parent/') ||
     config.url.startsWith('/parents') ||
+    config.url.startsWith('/adoption-records') ||
+    config.url.startsWith('/contact-us') ||
     config.url.startsWith('/user-documents')
   );
 

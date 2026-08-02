@@ -39,6 +39,18 @@ public class ParentServiceImpl implements ParentService {
     @Autowired
     private JwtUtils jwtUtils;
 
+    @Autowired
+    private com.backend.repository.AdoptionRequestRepository adoptionRequestRepository;
+
+    @Autowired
+    private com.backend.repository.HomeVisitRepository homeVisitRepository;
+
+    @Autowired
+    private com.backend.repository.UserDocumentRepository userDocumentRepository;
+
+    @Autowired
+    private com.backend.repository.ChildRepository childRepository;
+
     @Override
     public AuthResponse registerParent(ParentRegisterRequest request) {
         String email = request.getEmail().trim().toLowerCase();
@@ -153,6 +165,164 @@ public class ParentServiceImpl implements ParentService {
 
         User updatedUser = userRepository.save(user);
         return mapToProfileResponse(updatedUser);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public com.backend.dto.ParentDashboardResponseDto getParentDashboard(Long userId, String email) {
+        User user = null;
+        if (userId != null) {
+            user = userRepository.findById(userId).orElse(null);
+        }
+        if (user == null && email != null && !email.trim().isEmpty()) {
+            user = userRepository.findByEmail(email).orElse(null);
+        }
+
+        if (user == null) {
+            throw new ResourceNotFoundException("Parent user not found.");
+        }
+
+        Long uid = user.getUserId();
+
+        // 1. Applications & Current Status (Indexed query)
+        java.util.List<com.backend.entity.AdoptionRequest> requests = adoptionRequestRepository.findByUserUserIdOrderByRequestDateDesc(uid);
+        long applicationCount = requests != null ? requests.size() : 0;
+        com.backend.entity.AdoptionRequest latestRequest = (requests != null && !requests.isEmpty()) ? requests.get(0) : null;
+
+        String currentStatus = latestRequest != null && latestRequest.getStatus() != null 
+                ? latestRequest.getStatus().name() 
+                : (user.getStatus() != null ? user.getStatus().name() : "REGISTERED");
+
+        String latestAppNum = latestRequest != null ? latestRequest.getApplicationNumber() : null;
+        String latestChildName = latestRequest != null && latestRequest.getChild() != null 
+                ? (latestRequest.getChild().getFirstName() + " " + (latestRequest.getChild().getLastName() != null ? latestRequest.getChild().getLastName() : "")).trim()
+                : null;
+
+        // 2. Upcoming / Latest Home Visit (Indexed query)
+        java.util.List<com.backend.entity.HomeVisit> visits = homeVisitRepository.findByRequestUserUserIdOrderByScheduledDateDescScheduledTimeDesc(uid);
+        com.backend.entity.HomeVisit latestVisit = (visits != null && !visits.isEmpty()) ? visits.get(0) : null;
+        com.backend.dto.ParentHomeVisitDto upcomingVisitDto = null;
+        String assignedWorker = null;
+
+        if (latestVisit != null) {
+            String swName = latestVisit.getSocialWorker() != null 
+                    ? (latestVisit.getSocialWorker().getFirstName() + " " + (latestVisit.getSocialWorker().getLastName() != null ? latestVisit.getSocialWorker().getLastName() : "")).trim()
+                    : "Assigned Social Worker";
+            assignedWorker = swName;
+
+            upcomingVisitDto = com.backend.dto.ParentHomeVisitDto.builder()
+                    .homeVisitId(latestVisit.getHomeVisitId())
+                    .visitCode("HV-" + latestVisit.getHomeVisitId())
+                    .visitDate(latestVisit.getScheduledDate())
+                    .visitTime(latestVisit.getScheduledTime())
+                    .assignedSocialWorker(swName)
+                    .socialWorker(swName)
+                    .status(latestVisit.getStatus())
+                    .remarks(latestVisit.getRemarks())
+                    .applicationNumber(latestVisit.getRequest() != null ? latestVisit.getRequest().getApplicationNumber() : null)
+                    .childName(latestVisit.getRequest() != null && latestVisit.getRequest().getChild() != null ? (latestVisit.getRequest().getChild().getFirstName() + " " + (latestVisit.getRequest().getChild().getLastName() != null ? latestVisit.getRequest().getChild().getLastName() : "")).trim() : null)
+                    .build();
+        }
+
+        // 3. Document Verification Status Summary
+        java.util.List<com.backend.entity.UserDocument> documents = userDocumentRepository.findByUserUserId(uid);
+        int totalDocs = documents != null ? documents.size() : 0;
+        int verifiedDocs = 0;
+        int pendingDocs = 0;
+        int rejectedDocs = 0;
+
+        if (documents != null) {
+            for (com.backend.entity.UserDocument doc : documents) {
+                if (doc.getVerificationStatus() == com.backend.entity.VerificationStatus.VERIFIED) verifiedDocs++;
+                else if (doc.getVerificationStatus() == com.backend.entity.VerificationStatus.REJECTED) rejectedDocs++;
+                else pendingDocs++;
+            }
+        }
+
+        com.backend.dto.ParentDashboardResponseDto.DocumentStatusSummaryDto docSummary = com.backend.dto.ParentDashboardResponseDto.DocumentStatusSummaryDto.builder()
+                .totalUploaded(totalDocs)
+                .verifiedCount(verifiedDocs)
+                .pendingCount(pendingDocs)
+                .rejectedCount(rejectedDocs)
+                .summaryText(totalDocs > 0 ? verifiedDocs + " of " + totalDocs + " documents verified" : "No documents uploaded yet")
+                .build();
+
+        // 4. Notifications
+        java.util.List<com.backend.dto.ParentDashboardResponseDto.DashboardNotificationDto> notifications = new java.util.ArrayList<>();
+        if (latestRequest != null) {
+            notifications.add(com.backend.dto.ParentDashboardResponseDto.DashboardNotificationDto.builder()
+                    .id("NOTIF-1")
+                    .title("Application Status: " + latestRequest.getStatus())
+                    .message("Application #" + latestRequest.getApplicationNumber() + " is currently " + latestRequest.getStatus())
+                    .type("INFO")
+                    .status("UNREAD")
+                    .timestamp(latestRequest.getStatusUpdatedAt() != null ? latestRequest.getStatusUpdatedAt() : latestRequest.getRequestDate())
+                    .build());
+        }
+        if (latestVisit != null) {
+            notifications.add(com.backend.dto.ParentDashboardResponseDto.DashboardNotificationDto.builder()
+                    .id("NOTIF-2")
+                    .title("Home Visit: " + latestVisit.getStatus())
+                    .message("Home visit scheduled on " + latestVisit.getScheduledDate() + (latestVisit.getScheduledTime() != null ? " at " + latestVisit.getScheduledTime() : ""))
+                    .type("SUCCESS")
+                    .status("UNREAD")
+                    .timestamp(latestVisit.getCreatedAt() != null ? latestVisit.getCreatedAt() : java.time.LocalDateTime.now())
+                    .build());
+        }
+        if (notifications.isEmpty()) {
+            notifications.add(com.backend.dto.ParentDashboardResponseDto.DashboardNotificationDto.builder()
+                    .id("NOTIF-WELCOME")
+                    .title("Welcome to Aashray")
+                    .message("Complete your profile and upload documents to begin the adoption process.")
+                    .type("INFO")
+                    .status("READ")
+                    .timestamp(java.time.LocalDateTime.now())
+                    .build());
+        }
+
+        // 5. Recommended Available Children (Top 4 available)
+        java.util.List<com.backend.entity.Child> availableChildren = childRepository.findByStatus(com.backend.entity.ChildStatus.AVAILABLE);
+        java.util.List<com.backend.dto.ParentDashboardResponseDto.ChildSummaryDto> recommendedChildren = new java.util.ArrayList<>();
+        if (availableChildren != null) {
+            recommendedChildren = availableChildren.stream()
+                    .limit(4)
+                    .map(c -> com.backend.dto.ParentDashboardResponseDto.ChildSummaryDto.builder()
+                            .childId(c.getChildId())
+                            .firstName(c.getFirstName())
+                            .lastName(c.getLastName())
+                            .fullName((c.getFirstName() + " " + (c.getLastName() != null ? c.getLastName() : "")).trim())
+                            .gender(c.getGender() != null ? c.getGender().name() : null)
+                            .dob(c.getDob())
+                            .profilePhoto(c.getProfilePhoto())
+                            .description(c.getDescription())
+                            .build())
+                    .collect(java.util.stream.Collectors.toList());
+        }
+
+        // 6. Profile Completion Percentage
+        int profileScore = 40;
+        if (user.getPhone() != null && !user.getPhone().isEmpty()) profileScore += 10;
+        if (user.getAadhaarNumber() != null && !user.getAadhaarNumber().isEmpty()) profileScore += 15;
+        if (user.getOccupation() != null && !user.getOccupation().isEmpty()) profileScore += 10;
+        if (user.getAddress() != null && !user.getAddress().isEmpty()) profileScore += 15;
+        if (totalDocs > 0) profileScore += 10;
+
+        String fullName = (user.getFirstName() + " " + (user.getLastName() != null ? user.getLastName() : "")).trim();
+
+        return com.backend.dto.ParentDashboardResponseDto.builder()
+                .parentName(fullName)
+                .parentEmail(user.getEmail())
+                .applicationCount(applicationCount)
+                .currentStatus(currentStatus)
+                .profileCompletionPercentage(Math.min(profileScore, 100))
+                .latestApplicationNumber(latestAppNum)
+                .latestChildName(latestChildName)
+                .assignedSocialWorker(assignedWorker)
+                .upcomingHomeVisit(upcomingVisitDto)
+                .documentStatus(docSummary)
+                .recentNotifications(notifications)
+                .recommendedChildren(recommendedChildren)
+                .build();
     }
 
     private static ParentProfileResponse mapToProfileResponse(User user) {

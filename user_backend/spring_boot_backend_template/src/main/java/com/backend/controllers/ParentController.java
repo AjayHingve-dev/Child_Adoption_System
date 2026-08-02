@@ -59,4 +59,24 @@ public class ParentController {
         ParentProfileResponse updated = parentService.updateParentProfile(userPrincipal.getUsername(), request);
         return ResponseEntity.ok(ApiResponse.ok(updated, "Parent profile updated successfully"));
     }
+
+    // Dashboard API: GET /api/parents/dashboard
+    @GetMapping("/dashboard")
+    public ResponseEntity<ApiResponse<com.backend.dto.ParentDashboardResponseDto>> getDashboard(
+            @org.springframework.web.bind.annotation.RequestParam(value = "userId", required = false) Long userIdParam,
+            @AuthenticationPrincipal UserPrincipal userPrincipal) {
+
+        Long effectiveUserId = userIdParam;
+        String email = null;
+
+        if (userPrincipal != null) {
+            if (effectiveUserId == null) {
+                effectiveUserId = userPrincipal.getId();
+            }
+            email = userPrincipal.getUsername();
+        }
+
+        com.backend.dto.ParentDashboardResponseDto dashboard = parentService.getParentDashboard(effectiveUserId, email);
+        return ResponseEntity.ok(ApiResponse.ok(dashboard, "Parent dashboard retrieved successfully"));
+    }
 }

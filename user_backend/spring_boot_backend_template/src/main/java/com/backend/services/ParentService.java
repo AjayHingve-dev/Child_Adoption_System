@@ -11,4 +11,5 @@ public interface ParentService {
     AuthResponse loginParent(LoginRequest request);
     ParentProfileResponse getParentProfile(String email);
     ParentProfileResponse updateParentProfile(String email, ParentProfileUpdateRequest request);
+    com.backend.dto.ParentDashboardResponseDto getParentDashboard(Long userId, String email);
 }

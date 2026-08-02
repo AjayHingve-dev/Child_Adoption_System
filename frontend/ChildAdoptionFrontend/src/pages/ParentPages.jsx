@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
   Baby,
@@ -43,147 +43,214 @@ const fmt = (d) => (d ? new Date(d).toLocaleDateString("en-IN") : "—");
 export function ParentDashboard() {
   const nav = useNavigate();
   const u = getUser();
-  const [homeVisits, setHomeVisits] = useState([]);
+  const [dashboard, setDashboard] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
-  React.useEffect(() => {
-    const fetchVisits = async () => {
+  const userIdParam = (u?.userId || u?.id) ? `?userId=${u.userId || u.id}` : "";
+
+  useEffect(() => {
+    let isMounted = true;
+    const fetchDashboard = async () => {
+      setLoading(true);
+      setError("");
       try {
-        const userIdParam = (u?.userId || u?.id) ? `?userId=${u.userId || u.id}` : "";
-        const res = await api.get(`/home-visits/my${userIdParam}`);
+        const res = await api.get(`/parents/dashboard${userIdParam}`);
         const data = res.data?.data || res.data;
-        if (Array.isArray(data)) {
-          setHomeVisits(data);
+        if (isMounted && data) {
+          setDashboard(data);
         }
       } catch (err) {
-        console.warn("Failed to fetch home visits:", errorMessage(err));
+        if (isMounted) {
+          console.warn("Failed to fetch dashboard data:", errorMessage(err));
+          setError("Failed to load dashboard data.");
+        }
+      } finally {
+        if (isMounted) setLoading(false);
       }
     };
-    fetchVisits();
-  }, [u?.userId, u?.id]);
+    fetchDashboard();
+    return () => { isMounted = false; };
+  }, [userIdParam]);
 
-  const latestVisit = homeVisits.length > 0 ? homeVisits[0] : null;
+  const parentName = dashboard?.parentName || u?.fullName || "Parent";
+  const firstName = parentName.split(" ")[0];
+  const appCount = dashboard?.applicationCount ?? 0;
+  const currStatus = dashboard?.currentStatus || "REGISTERED";
+  const completionPct = dashboard?.profileCompletionPercentage ?? 50;
+  const visit = dashboard?.upcomingHomeVisit;
+  const docSummary = dashboard?.documentStatus;
+  const notifications = dashboard?.recentNotifications || [];
+  const recommendedChildren = dashboard?.recommendedChildren || [];
 
   return (
     <>
       <PageHeader
         eyebrow="Parent portal"
-        title={`Welcome, ${u?.fullName?.split(" ")[0] || "Parent"}`}
+        title={`Welcome, ${firstName}`}
         description="Track your profile, documents, applications and adoption journey."
       />
-      <div className="stat-grid">
-        <Card className="stat-card">
-          <div className="stat-icon">
-            <CheckCircle2 />
-          </div>
-          <div>
-            <span>Profile completion</span>
-            <strong>82%</strong>
-            <small>Complete remaining details</small>
-          </div>
-        </Card>
-        <Card className="stat-card tone-1">
-          <div className="stat-icon">
-            <ClipboardList />
-          </div>
-          <div>
-            <span>Applications</span>
-            <strong>1</strong>
-            <small>One active application</small>
-          </div>
-        </Card>
-        <Card className="stat-card tone-2">
-          <div className="stat-icon">
-            <House />
-          </div>
-          <div>
-            <span>Home visit</span>
-            <strong>{latestVisit?.visitDate ? fmt(latestVisit.visitDate) : "27 Jul"}</strong>
-            <small>{latestVisit?.visitTime ? `At ${latestVisit.visitTime}` : latestVisit?.status ? `Status: ${latestVisit.status}` : "Scheduled at 10:30 AM"}</small>
-          </div>
-        </Card>
-        <Card className="stat-card tone-3">
-          <div className="stat-icon">
-            <Bell />
-          </div>
-          <div>
-            <span>Notifications</span>
-            <strong>3</strong>
-            <small>Two require attention</small>
-          </div>
-        </Card>
-      </div>
-      <div className="dashboard-grid">
-        <Card>
-          <div className="card-title">
-            <div>
-              <span className="eyebrow">Current application</span>
-              <h2>{latestVisit?.applicationNumber || parentApplication.applicationNumber}</h2>
-            </div>
-            <Status value={latestVisit?.status || parentApplication.status} />
-          </div>
-          <div className="detail-grid compact">
-            <div>
-              <span>Child</span>
-              <b>{latestVisit?.childName || parentApplication.childName}</b>
-            </div>
-            <div>
-              <span>Applied date</span>
-              <b>{fmt(parentApplication.appliedDate)}</b>
-            </div>
-            <div>
-              <span>Social worker</span>
-              <b>{latestVisit?.assignedSocialWorker || parentApplication.socialWorker}</b>
-            </div>
-            <div>
-              <span>Visit status</span>
-              <Status value={latestVisit?.status || parentApplication.visitStatus} />
-            </div>
-          </div>
-          <div className="modal-actions left">
-            <Button onClick={() => nav("/parent/applications")}>
-              Track application
-            </Button>
-            <Button variant="secondary" onClick={() => nav("/parent/children")}>
-              Browse children
-            </Button>
-          </div>
-        </Card>
-        <Card>
-          <div className="card-title">
-            <div>
-              <span className="eyebrow">Next steps</span>
-              <h2>Complete your journey</h2>
-            </div>
-            <Baby />
-          </div>
-          <div className="activity-list">
-            <div>
-              <div className="activity-dot" />
-              <div>
-                <strong>Upload Marriage Certificate</strong>
-                <p>Required before final verification.</p>
+
+      {loading ? (
+        <Card><Loading label="Loading parent dashboard..." /></Card>
+      ) : (
+        <>
+          <div className="stat-grid">
+            <Card className="stat-card" style={{ cursor: "pointer" }} onClick={() => nav("/parent/profile")}>
+              <div className="stat-icon">
+                <CheckCircle2 />
               </div>
-              <Status value="PENDING" />
-            </div>
-            <div>
-              <div className="activity-dot" />
               <div>
-                <strong>Prepare for home visit</strong>
-                <p>{latestVisit ? `Scheduled for ${fmt(latestVisit.visitDate)} with ${latestVisit.assignedSocialWorker}` : "Your assigned social worker will visit on 27 July."}</p>
+                <span>Profile completion</span>
+                <strong>{completionPct}%</strong>
+                <small>{docSummary?.summaryText || "Complete profile details"}</small>
               </div>
-              <Status value={latestVisit?.status || "SCHEDULED"} />
-            </div>
-            <div>
-              <div className="activity-dot" />
+            </Card>
+            <Card className="stat-card tone-1" style={{ cursor: "pointer" }} onClick={() => nav("/parent/applications")}>
+              <div className="stat-icon">
+                <ClipboardList />
+              </div>
               <div>
-                <strong>Application under review</strong>
-                <p>Admin has verified your initial documents.</p>
+                <span>Applications</span>
+                <strong>{appCount}</strong>
+                <small>Status: {currStatus}</small>
               </div>
-              <Status value="UNDER_REVIEW" />
-            </div>
+            </Card>
+            <Card className="stat-card tone-2" style={{ cursor: "pointer" }} onClick={() => nav("/parent/applications")}>
+              <div className="stat-icon">
+                <House />
+              </div>
+              <div>
+                <span>Home visit</span>
+                <strong>{visit?.visitDate ? fmt(visit.visitDate) : "None Scheduled"}</strong>
+                <small>{visit?.visitTime ? `At ${visit.visitTime}` : visit?.status ? `Status: ${visit.status}` : "Pending assignment"}</small>
+              </div>
+            </Card>
+            <Card className="stat-card tone-3" style={{ cursor: "pointer" }} onClick={() => {
+              const el = document.getElementById("notifications-section");
+              if (el) el.scrollIntoView({ behavior: "smooth" });
+              else nav("/parent/applications");
+            }}>
+              <div className="stat-icon">
+                <Bell />
+              </div>
+              <div>
+                <span>Notifications</span>
+                <strong>{notifications.length}</strong>
+                <small>Recent updates</small>
+              </div>
+            </Card>
           </div>
-        </Card>
-      </div>
+
+          <div className="dashboard-grid">
+            <Card>
+              <div className="card-title">
+                <div>
+                  <span className="eyebrow">Current application</span>
+                  <h2>{dashboard?.latestApplicationNumber || "No Active Application"}</h2>
+                </div>
+                <Status value={currStatus} />
+              </div>
+              <div className="detail-grid compact">
+                <div>
+                  <span>Child Name</span>
+                  <b>{dashboard?.latestChildName || "Not assigned"}</b>
+                </div>
+                <div>
+                  <span>Assigned Worker</span>
+                  <b>{dashboard?.assignedSocialWorker || visit?.assignedSocialWorker || "Pending"}</b>
+                </div>
+                <div>
+                  <span>Documents Verified</span>
+                  <b>{docSummary ? `${docSummary.verifiedCount} / ${docSummary.totalUploaded}` : "0"}</b>
+                </div>
+                <div>
+                  <span>Visit Status</span>
+                  <Status value={visit?.status || "NOT_SCHEDULED"} />
+                </div>
+              </div>
+              <div className="modal-actions left" style={{ marginTop: "1.25rem" }}>
+                <Button onClick={() => nav("/parent/applications")}>
+                  Track application
+                </Button>
+                <Button variant="secondary" onClick={() => nav("/parent/children")}>
+                  Browse children
+                </Button>
+              </div>
+            </Card>
+
+            <Card id="notifications-section">
+              <div className="card-title">
+                <div>
+                  <span className="eyebrow">Notifications & Activity</span>
+                  <h2>Recent Updates</h2>
+                </div>
+                <Bell size={20} />
+              </div>
+              <div className="activity-list">
+                {notifications.map((n, idx) => (
+                  <div key={n.id || idx}>
+                    <div className="activity-dot" />
+                    <div>
+                      <strong>{n.title}</strong>
+                      <p>{n.message}</p>
+                    </div>
+                    <Status value={n.status || "INFO"} />
+                  </div>
+                ))}
+              </div>
+            </Card>
+          </div>
+
+          {recommendedChildren.length > 0 && (
+            <Card style={{ marginTop: "1.5rem" }}>
+              <div className="card-title">
+                <div>
+                  <span className="eyebrow">Featured</span>
+                  <h2>Recommended Available Children</h2>
+                </div>
+                <Button variant="secondary" onClick={() => nav("/parent/children")}>
+                  View All
+                </Button>
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "1rem", marginTop: "1rem" }}>
+                {recommendedChildren.map((child) => (
+                  <div key={child.childId} style={{
+                    border: "1px solid var(--border-color, #e2e8f0)",
+                    borderRadius: "0.5rem",
+                    padding: "1rem",
+                    textAlign: "center",
+                    background: "var(--surface-muted, #f8fafc)"
+                  }}>
+                    <div style={{
+                      width: "64px",
+                      height: "64px",
+                      borderRadius: "50%",
+                      overflow: "hidden",
+                      margin: "0 auto 0.75rem",
+                      background: "#e2e8f0",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center"
+                    }}>
+                      {child.profilePhoto ? (
+                        <img src={child.profilePhoto} alt={child.fullName} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                      ) : (
+                        <Baby size={32} style={{ color: "#3b82f6" }} />
+                      )}
+                    </div>
+                    <h4 style={{ margin: "0 0 0.25rem", fontSize: "1rem" }}>{child.fullName}</h4>
+                    <p style={{ margin: 0, fontSize: "0.8rem", color: "#64748b" }}>{child.gender || "Child"}</p>
+                    <Button variant="secondary" style={{ marginTop: "0.75rem", width: "100%", fontSize: "0.8rem", padding: "0.4rem" }} onClick={() => nav(`/parent/children/${child.childId}`)}>
+                      View Profile
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            </Card>
+          )}
+        </>
+      )}
     </>
   );
 }
@@ -205,6 +272,7 @@ export function ParentProfile() {
     city: "",
     state: "",
     pincode: "",
+    profilePhoto: current?.profilePhoto || "",
   });
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -216,6 +284,7 @@ export function ParentProfile() {
       try {
         const response = await api.get("/parents/profile");
         const data = response.data?.data || response.data;
+        const curUser = getUser();
         if (data) {
           setForm({
             firstName: data.firstName || "",
@@ -232,6 +301,7 @@ export function ParentProfile() {
             city: data.city || "",
             state: data.state || "",
             pincode: data.pincode || "",
+            profilePhoto: data.profilePhoto || curUser?.profilePhoto || "",
           });
         }
       } catch (e) {
@@ -256,6 +326,7 @@ export function ParentProfile() {
         lastName: data.lastName || form.lastName,
         email: data.email || form.email,
         phone: data.phone || form.phone,
+        profilePhoto: data.profilePhoto || form.profilePhoto,
         role: "PARENT",
       };
       saveUserProfile(updatedUser);
@@ -266,6 +337,39 @@ export function ParentProfile() {
       setSaving(false);
     }
   };
+
+  const handlePhotoSelect = (e) => {
+    const file = e.target.files && e.target.files[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        setToast({ type: "error", message: "Photo file size should be less than 5MB." });
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = async (event) => {
+        const base64Photo = event.target.result;
+        const updatedForm = { ...form, profilePhoto: base64Photo };
+        setForm(updatedForm);
+
+        const curUser = getUser() || {};
+        saveUserProfile({ ...curUser, profilePhoto: base64Photo });
+
+        try {
+          const res = await api.put("/parents/profile", updatedForm);
+          const data = res.data?.data || res.data;
+          if (data?.profilePhoto) {
+            saveUserProfile({ ...curUser, profilePhoto: data.profilePhoto });
+          }
+          setToast({ message: "Profile photo updated and saved successfully!" });
+        } catch (err) {
+          console.warn("Photo upload API sync fallback:", err);
+          setToast({ message: `Photo "${file.name}" updated! Click "Save profile" to save changes.` });
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   return (
     <>
       <PageHeader
@@ -276,14 +380,20 @@ export function ParentProfile() {
       <Card>
         <form onSubmit={save}>
           <div className="profile-photo-row">
-            <div className="profile-photo-large">{(form.firstName || "P")[0]}</div>
+            <div className="profile-photo-large" style={{ overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              {form.profilePhoto ? (
+                <img src={form.profilePhoto} alt="Profile" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+              ) : (
+                (form.firstName || "P")[0]
+              )}
+            </div>
             <div>
               <h3>
                 {form.firstName} {form.lastName}
               </h3>
               <label className="btn secondary file-button">
                 <Upload size={16} /> Update photo
-                <input type="file" accept="image/*" />
+                <input type="file" accept="image/*" onChange={handlePhotoSelect} />
               </label>
             </div>
           </div>
@@ -1046,54 +1156,231 @@ export function ParentApplications() {
   );
 }
 export function AdoptionRecord() {
+  const [records, setRecords] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  const user = getUser();
+  const userIdParam = user?.userId ? `?userId=${user.userId}` : "";
+
+  useEffect(() => {
+    let isMounted = true;
+    const fetchRecords = async () => {
+      setLoading(true);
+      setError("");
+      try {
+        const res = await api.get(`/adoption-records/my${userIdParam}`);
+        const data = res.data?.data || res.data || [];
+        if (isMounted) {
+          setRecords(Array.isArray(data) ? data : []);
+        }
+      } catch (err) {
+        if (isMounted) {
+          console.error("Error fetching adoption records:", err);
+          setError("Unable to load adoption records.");
+        }
+      } finally {
+        if (isMounted) setLoading(false);
+      }
+    };
+
+    fetchRecords();
+    return () => { isMounted = false; };
+  }, [userIdParam]);
+
   return (
     <>
       <PageHeader
         eyebrow="Parent portal"
         title="Adoption Record"
-        description="Your final adoption certificate will appear here after approval."
+        description="Your final adoption certificate, child details, and approval records appear here."
       />
-      <Card>
-        <div className="empty">
-          <Award size={44} />
-          <h3>No adoption record yet</h3>
-          <p>
-            Your application is currently under review. Approved records include
-            child name, adoption date and certificate number.
-          </p>
+
+      {loading ? (
+        <Card><Loading label="Loading adoption records..." /></Card>
+      ) : error ? (
+        <Card><p className="error-text">{error}</p></Card>
+      ) : records.length === 0 ? (
+        <Card>
+          <div className="empty">
+            <Award size={44} />
+            <h3>No adoption record yet</h3>
+            <p>
+              Your application is currently under review. Approved records will include
+              child name, approval date, adoption status, and certificate number.
+            </p>
+          </div>
+        </Card>
+      ) : (
+        <div className="records-grid" style={{ display: "grid", gap: "1.5rem" }}>
+          {records.map((rec, idx) => (
+            <Card key={rec.adoptionId || idx} className="adoption-record-card" style={{ padding: "1.5rem" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: "1rem" }}>
+                <div style={{ display: "flex", gap: "1.25rem", alignItems: "center" }}>
+                  <div style={{
+                    width: "72px",
+                    height: "72px",
+                    borderRadius: "50%",
+                    overflow: "hidden",
+                    background: "var(--surface-muted, #f1f5f9)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    border: "2px solid var(--border-color, #e2e8f0)"
+                  }}>
+                    {rec.childProfilePhoto ? (
+                      <img src={rec.childProfilePhoto} alt={rec.childFullName || "Child"} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                    ) : (
+                      <Baby size={36} style={{ color: "var(--primary, #3b82f6)" }} />
+                    )}
+                  </div>
+                  <div>
+                    <h3 style={{ margin: 0, fontSize: "1.25rem" }}>
+                      {rec.childFullName || `${rec.childFirstName || ''} ${rec.childLastName || ''}`.trim() || "Child Details"}
+                    </h3>
+                    <p style={{ margin: "0.25rem 0 0", color: "#64748b", fontSize: "0.875rem" }}>
+                      {rec.childGender && <span>Gender: <strong>{rec.childGender}</strong></span>}
+                      {rec.childDob && <span> | DOB: <strong>{rec.childDob}</strong></span>}
+                    </p>
+                    {rec.applicationNumber && (
+                      <p style={{ margin: "0.25rem 0 0", color: "#94a3b8", fontSize: "0.8rem" }}>
+                        App #: <strong>{rec.applicationNumber}</strong>
+                      </p>
+                    )}
+                  </div>
+                </div>
+                <div>
+                  <Status status={rec.status || "APPROVED"} />
+                </div>
+              </div>
+
+              <hr style={{ margin: "1.25rem 0", borderColor: "#f1f5f9", borderWidth: "1px 0 0" }} />
+
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "1rem" }}>
+                <div>
+                  <span style={{ fontSize: "0.75rem", textTransform: "uppercase", letterSpacing: "0.05em", color: "#94a3b8" }}>Approval Date</span>
+                  <div style={{ fontSize: "1rem", fontWeight: 600, color: "#1e293b", marginTop: "0.25rem", display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                    <CalendarDays size={16} />
+                    {rec.adoptionDate || "N/A"}
+                  </div>
+                </div>
+
+                <div>
+                  <span style={{ fontSize: "0.75rem", textTransform: "uppercase", letterSpacing: "0.05em", color: "#94a3b8" }}>Certificate Number</span>
+                  <div style={{ fontSize: "1rem", fontWeight: 600, color: "#1e293b", marginTop: "0.25rem", display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                    <Award size={16} style={{ color: "#eab308" }} />
+                    {rec.certificateNumber || "Pending"}
+                  </div>
+                </div>
+
+                <div>
+                  <span style={{ fontSize: "0.75rem", textTransform: "uppercase", letterSpacing: "0.05em", color: "#94a3b8" }}>Adoption Status</span>
+                  <div style={{ fontSize: "1rem", fontWeight: 600, color: "#16a34a", marginTop: "0.25rem", display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                    <CheckCircle2 size={16} />
+                    {rec.status || "APPROVED"}
+                  </div>
+                </div>
+              </div>
+            </Card>
+          ))}
         </div>
-      </Card>
+      )}
     </>
   );
 }
 export function ParentContact() {
+  const user = getUser();
   const [toast, setToast] = useState(null);
-  const submit = (e) => {
-    e.preventDefault();
-    e.currentTarget.reset();
-    setToast({ message: "Your message has been submitted" });
+  const [loading, setLoading] = useState(false);
+  const [form, setForm] = useState({
+    name: user?.fullName || `${user?.firstName || ''} ${user?.lastName || ''}`.trim() || "",
+    email: user?.email || "",
+    phone: user?.phone || "",
+    subject: "",
+    message: ""
+  });
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setForm(prev => ({ ...prev, [name]: value }));
   };
+
+  const submit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setToast(null);
+
+    try {
+      const response = await api.post("/contact-us", form);
+      const msg = response.data?.message || "Thank you for contacting us. Your message has been submitted successfully.";
+      setToast({ type: "success", message: msg });
+      setForm({
+        name: user?.fullName || "",
+        email: user?.email || "",
+        phone: user?.phone || "",
+        subject: "",
+        message: ""
+      });
+    } catch (err) {
+      console.error("Contact Us submit error:", err);
+      const msg = errorMessage(err);
+      setToast({ type: "error", message: `Submission failed: ${msg}` });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <>
       <PageHeader
         eyebrow="Parent portal"
         title="Contact Us"
-        description="Send a question to the adoption support team."
+        description="Send a question or inquiry to the adoption support team."
       />
       <Card className="contact-card">
         <form onSubmit={submit}>
           <div className="form-grid">
-            <Field label="Name" required />
-            <Field label="Email" type="email" required />
-            <Field label="Phone" required />
-            <Field label="Subject" required />
+            <Field
+              label="Name"
+              name="name"
+              value={form.name}
+              onChange={handleChange}
+              required
+            />
+            <Field
+              label="Email"
+              type="email"
+              name="email"
+              value={form.email}
+              onChange={handleChange}
+              required
+            />
+            <Field
+              label="Phone"
+              name="phone"
+              value={form.phone}
+              onChange={handleChange}
+            />
+            <Field
+              label="Subject"
+              name="subject"
+              value={form.subject}
+              onChange={handleChange}
+              required
+            />
             <div className="full">
-              <TextareaField label="Message" required />
+              <TextareaField
+                label="Message"
+                name="message"
+                value={form.message}
+                onChange={handleChange}
+                required
+              />
             </div>
           </div>
-          <div className="modal-actions">
-            <Button>
-              <Send size={16} /> Submit message
+          <div className="modal-actions" style={{ marginTop: "1rem" }}>
+            <Button disabled={loading}>
+              <Send size={16} /> {loading ? "Submitting..." : "Submit message"}
             </Button>
           </div>
         </form>
@@ -1104,29 +1391,78 @@ export function ParentContact() {
 }
 export function SecurityPage() {
   const [toast, setToast] = useState(null);
-  const submit = (e) => {
-    e.preventDefault();
-    e.currentTarget.reset();
-    setToast({ message: "Password changed successfully" });
+  const [loading, setLoading] = useState(false);
+  const [form, setForm] = useState({
+    currentPassword: "",
+    newPassword: "",
+    confirmPassword: ""
+  });
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setForm(prev => ({ ...prev, [name]: value }));
   };
+
+  const submit = async (e) => {
+    e.preventDefault();
+    if (form.newPassword !== form.confirmPassword) {
+      setToast({ type: "error", message: "New password and confirmation do not match." });
+      return;
+    }
+    setLoading(true);
+    setToast(null);
+    try {
+      await api.put("/users/change-password", {
+        oldPassword: form.currentPassword,
+        newPassword: form.newPassword
+      });
+      setToast({ type: "success", message: "Password updated successfully!" });
+      setForm({ currentPassword: "", newPassword: "", confirmPassword: "" });
+    } catch (err) {
+      console.error("Password update error:", err);
+      setToast({ type: "error", message: errorMessage(err) || "Failed to change password. Please check your current password." });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <>
       <PageHeader
+        eyebrow="Parent portal"
         title="Change Password"
         description="Use a strong password with at least eight characters."
       />
       <Card className="security-card">
         <form onSubmit={submit} className="stack-form">
-          <Field label="Current password" type="password" required />
-          <Field label="New password" type="password" minLength="8" required />
           <Field
-            label="Confirm new password"
+            label="Current password"
             type="password"
+            name="currentPassword"
+            value={form.currentPassword}
+            onChange={handleChange}
+            required
+          />
+          <Field
+            label="New password"
+            type="password"
+            name="newPassword"
+            value={form.newPassword}
+            onChange={handleChange}
             minLength="8"
             required
           />
-          <Button>
-            <LockKeyhole size={16} /> Update password
+          <Field
+            label="Confirm new password"
+            type="password"
+            name="confirmPassword"
+            value={form.confirmPassword}
+            onChange={handleChange}
+            minLength="8"
+            required
+          />
+          <Button disabled={loading}>
+            <LockKeyhole size={16} /> {loading ? "Updating..." : "Update password"}
           </Button>
         </form>
       </Card>

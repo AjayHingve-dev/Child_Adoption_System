@@ -39,9 +39,11 @@ export const saveUserProfile = (data) => {
     'user',
     JSON.stringify({
       ...current,
+      ...data,
       fullName: fullName || current.fullName,
       email: data.email || current.email,
       role: data.role || current.role,
+      profilePhoto: data.profilePhoto !== undefined ? data.profilePhoto : current.profilePhoto,
     })
   );
 };
