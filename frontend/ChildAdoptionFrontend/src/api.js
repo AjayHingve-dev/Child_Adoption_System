@@ -22,12 +22,13 @@ api.interceptors.request.use(config => {
   // Parent Portal specific routes (Spring Boot on port 8082)
   const isParentPortalRoute = config.url && (
     config.url.startsWith('/parent/') ||
+    config.url.startsWith('/parents') ||
     config.url.startsWith('/user-documents')
   );
 
-  if (isParentPortalRoute && user?.role === 'PARENT') {
+  if (user?.role === 'PARENT' || isParentPortalRoute) {
     config.baseURL = PARENT_API_URL;
-  } else {
+  } else if (!config.baseURL || config.baseURL === ADMIN_API_URL) {
     // All Admin endpoints (Parents, Children, Applications, Home Visits, Social Workers, Admins, Reports, Dashboard) go to .NET Admin backend (port 5080)
     config.baseURL = ADMIN_API_URL;
   }
