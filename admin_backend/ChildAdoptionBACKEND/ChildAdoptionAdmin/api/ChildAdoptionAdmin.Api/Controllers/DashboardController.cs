@@ -51,8 +51,9 @@ public class DashboardController : ControllerBase
         return Ok(ApiResponse<DashboardStatsResponse>.Ok(stats, "Dashboard metrics retrieved successfully"));
     }
 
-    // GET /api/admin/dashboard/recent-activity or GET /api/dashboard/recent-activity
+    // GET /api/admin/dashboard/recent-activity or GET /api/dashboard/recent-activity or /api/dashboard/activities
     [HttpGet("recent-activity")]
+    [HttpGet("activities")]
     public async Task<IActionResult> GetRecentActivity()
     {
         var recentApplications = await _db.AdoptionRequests

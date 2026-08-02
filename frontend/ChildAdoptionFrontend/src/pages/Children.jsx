@@ -69,25 +69,30 @@ export default function Children() {
     e.preventDefault();
     try {
       let response;
+      const payload = {
+        firstName: form.firstName,
+        lastName: form.lastName || null,
+        gender: form.gender || null,
+        dob: form.dob || null,
+        bloodGroup: form.bloodGroup || null,
+        healthStatus: form.healthStatus || null,
+        education: form.education || null,
+        medicalNotes: form.medicalNotes || null,
+        specialNeeds: Boolean(form.specialNeeds),
+        hobbies: form.hobbies || null,
+        description: form.description || null,
+        profilePhoto: form.profilePhoto || null,
+        admissionDate: form.admissionDate || null,
+        status: form.status || "AVAILABLE",
+      };
+
       if (editId) {
-        response = await api.put(`/children/${editId}`, {
-          healthStatus: form.healthStatus,
-          education: form.education,
-          medicalNotes: form.medicalNotes,
-          specialNeeds: form.specialNeeds,
-          description: form.description,
-          profilePhoto: form.profilePhoto,
-          status: form.status,
-        });
+        response = await api.put(`/children/${editId}`, payload);
       } else {
-        response = await api.post("/children", {
-          ...form,
-          dob: form.dob || null,
-          admissionDate: form.admissionDate || null,
-        });
+        response = await api.post("/children", payload);
       }
-      const id = editId || response.data.childId;
-      if (photo) {
+      const id = editId || response.data?.childId;
+      if (photo && id) {
         const fd = new FormData();
         fd.append("file", photo);
         await api.post(`/children/${id}/photo`, fd);
@@ -108,15 +113,38 @@ export default function Children() {
     setForm({
       ...blank,
       ...r,
-      dob: r.dob?.slice(0, 10) || "",
-      admissionDate: r.admissionDate?.slice(0, 10) || "",
+      firstName: r.firstName || "",
+      lastName: r.lastName || "",
+      gender: r.gender || "",
+      dob: r.dob ? r.dob.slice(0, 10) : "",
+      admissionDate: r.admissionDate ? r.admissionDate.slice(0, 10) : "",
+      bloodGroup: r.bloodGroup || "",
+      healthStatus: r.healthStatus || "",
+      education: r.education || "",
+      medicalNotes: r.medicalNotes || "",
+      hobbies: r.hobbies || "",
+      description: r.description || "",
+      status: r.status || "AVAILABLE",
+      specialNeeds: Boolean(r.specialNeeds),
     });
     setEditId(r.childId);
     setOpen(true);
   };
   const view = async (id) => {
     try {
-      setDetail((await api.get(`/children/${id}`)).data);
+      const res = await api.get(`/children/${id}`);
+      const data = res.data || {};
+      const childData = data.child || (data.childId ? data : null);
+      if (!childData) {
+        setToast({ type: "error", message: "Failed to load child details." });
+        return;
+      }
+      setDetail({
+        child: childData,
+        medicalHistory: data.medicalHistory || [],
+        vaccinations: data.vaccinations || [],
+        adoptionRequestCount: data.adoptionRequestCount ?? 0,
+      });
     } catch (e) {
       setToast({ type: "error", message: errorMessage(e) });
     }
@@ -143,6 +171,7 @@ export default function Children() {
         description="Add, view, update and safely remove child records."
         actions={
           <Button
+            type="button"
             onClick={() => {
               setForm(blank);
               setEditId(null);
@@ -255,68 +284,64 @@ export default function Children() {
       >
         <form onSubmit={save}>
           <div className="form-grid">
-            {!editId && (
-              <>
-                <Field
-                  label="Child name *"
-                  value={form.firstName}
-                  onChange={(e) =>
-                    setForm({ ...form, firstName: e.target.value })
-                  }
-                  required
-                />
-                <Field
-                  label="Last name"
-                  value={form.lastName}
-                  onChange={(e) =>
-                    setForm({ ...form, lastName: e.target.value })
-                  }
-                />
-                <SelectField
-                  label="Gender *"
-                  value={form.gender}
-                  required
-                  onChange={(e) => setForm({ ...form, gender: e.target.value })}
-                >
-                  <option value="">Select</option>
-                  <option>MALE</option>
-                  <option>FEMALE</option>
-                  <option>OTHER</option>
-                </SelectField>
-                <Field
-                  label="Date of birth *"
-                  type="date"
-                  max={new Date().toISOString().slice(0, 10)}
-                  value={form.dob}
-                  required
-                  onChange={(e) => setForm({ ...form, dob: e.target.value })}
-                />
-                <Field
-                  label="Blood group"
-                  value={form.bloodGroup}
-                  onChange={(e) =>
-                    setForm({ ...form, bloodGroup: e.target.value })
-                  }
-                />
-                <Field
-                  label="Admission date *"
-                  type="date"
-                  max={new Date().toISOString().slice(0, 10)}
-                  value={form.admissionDate}
-                  required
-                  onChange={(e) =>
-                    setForm({ ...form, admissionDate: e.target.value })
-                  }
-                />
-                <Field
-                  label="Hobbies"
-                  value={form.hobbies}
-                  onChange={(e) =>
-                    setForm({ ...form, hobbies: e.target.value })
-                  }
-                />
-              </>
-            )}
+            <Field
+              label="Child name *"
+              value={form.firstName}
+              onChange={(e) =>
+                setForm({ ...form, firstName: e.target.value })
+              }
+              required
+            />
+            <Field
+              label="Last name"
+              value={form.lastName}
+              onChange={(e) =>
+                setForm({ ...form, lastName: e.target.value })
+              }
+            />
+            <SelectField
+              label="Gender *"
+              value={form.gender}
+              required
+              onChange={(e) => setForm({ ...form, gender: e.target.value })}
+            >
+              <option value="">Select</option>
+              <option>MALE</option>
+              <option>FEMALE</option>
+              <option>OTHER</option>
+            </SelectField>
+            <Field
+              label="Date of birth *"
+              type="date"
+              max={new Date().toISOString().slice(0, 10)}
+              value={form.dob}
+              required
+              onChange={(e) => setForm({ ...form, dob: e.target.value })}
+            />
+            <Field
+              label="Blood group"
+              value={form.bloodGroup}
+              onChange={(e) =>
+                setForm({ ...form, bloodGroup: e.target.value })
+              }
+            />
+            <Field
+              label="Admission date *"
+              type="date"
+              max={new Date().toISOString().slice(0, 10)}
+              value={form.admissionDate}
+              required
+              onChange={(e) =>
+                setForm({ ...form, admissionDate: e.target.value })
+              }
+            />
+            <Field
+              label="Hobbies"
+              value={form.hobbies}
+              onChange={(e) =>
+                setForm({ ...form, hobbies: e.target.value })
+              }
+            />
             <Field
               label="Health status"
               value={form.healthStatus || ""}
@@ -388,7 +413,7 @@ export default function Children() {
         </form>
       </Modal>
       <Modal
-        open={!!detail}
+        open={Boolean(detail && detail.child)}
         onClose={() => setDetail(null)}
         title="Child details"
         wide

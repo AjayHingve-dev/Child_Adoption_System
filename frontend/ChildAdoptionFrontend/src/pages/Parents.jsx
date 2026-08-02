@@ -37,9 +37,19 @@ export default function Parents() {
   }, []);
   const view = async (id) => {
     try {
-      const d = (await api.get(`/parents/${id}`)).data;
-      setSelected(d);
-      setStatus(d.parent.status);
+      const res = await api.get(`/parents/${id}`);
+      const d = res.data || {};
+      const parentObj = d.parent || (d.userId ? d : null);
+      if (!parentObj) {
+        setToast({ type: "error", message: "Failed to load parent details." });
+        return;
+      }
+      setSelected({
+        parent: parentObj,
+        documents: Array.isArray(d.documents) ? d.documents : [],
+        applications: Array.isArray(d.applications) ? d.applications : (Array.isArray(d.adoptionRequests) ? d.adoptionRequests : []),
+      });
+      setStatus(parentObj.status || "ACTIVE");
     } catch (e) {
       setToast({ type: "error", message: errorMessage(e) });
     }
@@ -187,25 +197,27 @@ export default function Parents() {
         )}
       </Card>
       <Modal
-        open={!!selected}
+        open={Boolean(selected && selected.parent)}
         onClose={() => setSelected(null)}
         title="Parent profile"
         wide
       >
-        {selected && (
+        {selected && selected.parent && (
           <>
             <div className="detail-grid">
               {Object.entries(selected.parent)
                 .filter(([k]) => !["password", "profilePhoto"].includes(k))
                 .map(([k, v]) => (
                   <div key={k}>
-                    <span>{k.replace(/([A-Z])/g, " $1")}</span>
-                    <b>{v ?? "—"}</b>
+                    <span style={{ textTransform: "capitalize" }}>
+                      {k.replace(/([A-Z])/g, " $1")}
+                    </span>
+                    <b>{v !== null && v !== undefined && v !== "" ? String(v) : "—"}</b>
                   </div>
                 ))}
             </div>
             <h3>Documents</h3>
-            {selected.documents.length ? (
+            {selected.documents && selected.documents.length ? (
               <div className="table-wrap">
                 <table>
                   <thead>
@@ -221,7 +233,15 @@ export default function Parents() {
                       <tr key={d.documentId}>
                         <td>{d.documentType}</td>
                         <td>
-                          <a href={d.filePath} target="_blank">
+                          <a
+                            href={
+                              d.filePath?.startsWith("http")
+                                ? d.filePath
+                                : `http://localhost:5080/${d.filePath?.replace(/^\//, "")}`
+                            }
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
                             {d.fileName}
                           </a>
                         </td>
@@ -251,7 +271,7 @@ export default function Parents() {
               <Empty text="No documents uploaded" />
             )}
             <h3>Adoption applications</h3>
-            {selected.applications.length ? (
+            {selected.applications && selected.applications.length ? (
               selected.applications.map((a) => (
                 <p key={a.requestId}>
                   <b>{a.applicationNumber}</b> — {a.childName} —{" "}
@@ -267,6 +287,8 @@ export default function Parents() {
               onChange={(e) => setStatus(e.target.value)}
             >
               <option>ACTIVE</option>
+              <option>VERIFIED</option>
+              <option>REJECTED</option>
               <option>INACTIVE</option>
             </SelectField>
             <div className="modal-actions">

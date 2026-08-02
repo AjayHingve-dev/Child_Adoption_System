@@ -39,36 +39,42 @@ export function Button({
     </button>
   );
 }
-export function Field({ label, error, ...props }) {
+export function Field({ label, error, name, id, ...props }) {
+  const fieldId = id || name || (label ? label.toLowerCase().replace(/[^a-z0-9]/g, "-") : undefined);
   return (
-    <label className="field">
-      <span>{label}</span>
-      <input {...props} />
+    <label className="field" htmlFor={fieldId}>
+      {label && <span>{label}</span>}
+      <input id={fieldId} name={name || fieldId} {...props} />
       {error && <small>{error}</small>}
     </label>
   );
 }
-export function SelectField({ label, children, ...props }) {
+export function SelectField({ label, name, id, children, ...props }) {
+  const fieldId = id || name || (label ? label.toLowerCase().replace(/[^a-z0-9]/g, "-") : undefined);
   return (
-    <label className="field">
-      <span>{label}</span>
-      <select {...props}>{children}</select>
+    <label className="field" htmlFor={fieldId}>
+      {label && <span>{label}</span>}
+      <select id={fieldId} name={name || fieldId} {...props}>{children}</select>
     </label>
   );
 }
-export function TextareaField({ label, ...props }) {
+export function TextareaField({ label, name, id, ...props }) {
+  const fieldId = id || name || (label ? label.toLowerCase().replace(/[^a-z0-9]/g, "-") : undefined);
   return (
-    <label className="field">
-      <span>{label}</span>
-      <textarea {...props} />
+    <label className="field" htmlFor={fieldId}>
+      {label && <span>{label}</span>}
+      <textarea id={fieldId} name={name || fieldId} {...props} />
     </label>
   );
 }
-export function SearchBox({ value, onChange, placeholder = "Search..." }) {
+export function SearchBox({ value, onChange, placeholder = "Search...", name, id }) {
+  const fieldId = id || name || "search-input";
   return (
     <div className="search-box">
       <Search size={17} />
       <input
+        id={fieldId}
+        name={name || fieldId}
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}

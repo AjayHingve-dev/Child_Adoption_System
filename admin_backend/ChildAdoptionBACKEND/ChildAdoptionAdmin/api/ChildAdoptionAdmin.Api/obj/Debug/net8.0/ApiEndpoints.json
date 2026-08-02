@@ -12,6 +12,16 @@
   {
     "ContainingType": "ChildAdoptionAdmin.Api.Controllers.DashboardController",
     "Method": "GetRecentActivity",
+    "RelativePath": "api/admin/dashboard/activities",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "ChildAdoptionAdmin.Api.Controllers.DashboardController",
+    "Method": "GetRecentActivity",
     "RelativePath": "api/admin/dashboard/recent-activity",
     "HttpMethod": "GET",
     "IsController": true,
@@ -808,6 +818,22 @@
   },
   {
     "ContainingType": "ChildAdoptionAdmin.Api.Controllers.AuthController",
+    "Method": "ChangePassword",
+    "RelativePath": "api/auth/change-password",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "r",
+        "Type": "ChildAdoptionAdmin.Api.DTOs.ChangePasswordRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "ChildAdoptionAdmin.Api.Controllers.AuthController",
     "Method": "Login",
     "RelativePath": "api/auth/login",
     "HttpMethod": "POST",
@@ -843,6 +869,52 @@
     "ReturnTypes": [
       {
         "Type": "ChildAdoptionAdmin.Api.DTOs.LogoutResponse",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "ChildAdoptionAdmin.Api.Controllers.AuthController",
+    "Method": "GetMe",
+    "RelativePath": "api/auth/me",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": [
+      {
+        "Type": "ChildAdoptionAdmin.Api.DTOs.AdminResponse",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "ChildAdoptionAdmin.Api.Controllers.AuthController",
+    "Method": "UpdateProfile",
+    "RelativePath": "api/auth/profile",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "r",
+        "Type": "ChildAdoptionAdmin.Api.DTOs.UpdateAdminProfileRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "ChildAdoptionAdmin.Api.DTOs.AdminResponse",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -1048,6 +1120,16 @@
     "ContainingType": "ChildAdoptionAdmin.Api.Controllers.DashboardController",
     "Method": "GetStats",
     "RelativePath": "api/dashboard",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "ChildAdoptionAdmin.Api.Controllers.DashboardController",
+    "Method": "GetRecentActivity",
+    "RelativePath": "api/dashboard/activities",
     "HttpMethod": "GET",
     "IsController": true,
     "Order": 0,

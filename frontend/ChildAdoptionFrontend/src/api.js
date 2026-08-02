@@ -10,21 +10,26 @@ export const api = axios.create({
 
 api.interceptors.request.use(config => {
   const token = localStorage.getItem('token');
+  let user = null;
+  try {
+    user = JSON.parse(localStorage.getItem('user'));
+  } catch {}
+
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
 
-  // Route requests dynamically based on module path
-  if (config.url && (
-    config.url.startsWith('/parents') ||
-    config.url.startsWith('/parent') ||
-    config.url.startsWith('/children') ||
-    config.url.startsWith('/adoption-requests') ||
-    config.url.startsWith('/user-documents') ||
-    config.url.startsWith('/documents') ||
-    config.url.startsWith('/home-visits')
-  )) {
+  // Parent Portal specific routes (Spring Boot on port 8082)
+  const isParentPortalRoute = config.url && (
+    config.url.startsWith('/parent/') ||
+    config.url.startsWith('/user-documents')
+  );
+
+  if (isParentPortalRoute && user?.role === 'PARENT') {
     config.baseURL = PARENT_API_URL;
+  } else {
+    // All Admin endpoints (Parents, Children, Applications, Home Visits, Social Workers, Admins, Reports, Dashboard) go to .NET Admin backend (port 5080)
+    config.baseURL = ADMIN_API_URL;
   }
 
   // Remove default application/json header when posting FormData so boundary is automatically set
