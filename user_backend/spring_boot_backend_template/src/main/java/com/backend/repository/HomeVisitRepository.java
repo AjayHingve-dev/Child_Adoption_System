@@ -14,5 +14,7 @@ public interface HomeVisitRepository extends JpaRepository<HomeVisit, Long> {
     Optional<HomeVisit> findFirstByRequestRequestIdOrderByCreatedAtDesc(Long requestId);
     List<HomeVisit> findByRequestUserUserIdOrderByScheduledDateDescScheduledTimeDesc(Long userId);
     List<HomeVisit> findByRequestUserEmailOrderByScheduledDateDescScheduledTimeDesc(String email);
+    List<HomeVisit> findBySocialWorkerSocialWorkerIdOrderByScheduledDateDescScheduledTimeDesc(Long socialWorkerId);
+    List<HomeVisit> findBySocialWorkerEmailOrderByScheduledDateDescScheduledTimeDesc(String email);
 }
 
