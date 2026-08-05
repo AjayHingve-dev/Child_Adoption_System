@@ -7,6 +7,7 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
+import com.backend.entity.SocialWorker;
 import com.backend.entity.User;
 import com.backend.entity.UserStatus;
 
@@ -37,6 +38,21 @@ public class UserPrincipal implements UserDetails {
                 user.getLastName(),
                 user.getPhone(),
                 user.getStatus(),
+                Collections.singletonList(authority)
+        );
+    }
+
+    public static UserPrincipal create(SocialWorker worker) {
+        GrantedAuthority authority = new SimpleGrantedAuthority("ROLE_SOCIAL_WORKER");
+
+        return new UserPrincipal(
+                worker.getSocialWorkerId(),
+                worker.getEmail(),
+                worker.getPassword(),
+                worker.getFirstName(),
+                worker.getLastName(),
+                worker.getPhone(),
+                UserStatus.ACTIVE,
                 Collections.singletonList(authority)
         );
     }

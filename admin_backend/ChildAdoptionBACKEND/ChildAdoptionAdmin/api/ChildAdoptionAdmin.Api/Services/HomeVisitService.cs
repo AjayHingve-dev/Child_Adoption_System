@@ -267,4 +267,59 @@ public class HomeVisitService : IHomeVisitService
 
         return ApiResponse<HomeVisitReportResponse>.Ok(report, "Home visit report retrieved successfully");
     }
+
+    public async Task<ApiResponse<List<SocialWorkerMyHomeVisitResponse>>> GetMyVisitsAsync(long? socialWorkerId, string? email)
+    {
+        var query = _db.HomeVisits
+            .Include(v => v.Request)
+                .ThenInclude(r => r!.User)
+            .Include(v => v.Request)
+                .ThenInclude(r => r!.Child)
+            .Include(v => v.SocialWorker)
+            .AsNoTracking();
+
+        if (socialWorkerId.HasValue)
+        {
+            query = query.Where(v => v.SocialWorkerId == socialWorkerId.Value);
+        }
+        else if (!string.IsNullOrWhiteSpace(email))
+        {
+            var cleanEmail = email.Trim().ToLowerInvariant();
+            query = query.Where(v => v.SocialWorker != null && v.SocialWorker.Email.ToLower() == cleanEmail);
+        }
+
+        var visits = await query
+            .OrderByDescending(v => v.ScheduledDate)
+            .ThenByDescending(v => v.ScheduledTime)
+            .ToListAsync();
+
+        var result = visits.Select(v =>
+        {
+            var user = v.Request?.User;
+            var parentName = user != null ? $"{user.FirstName} {user.LastName}".Trim() : "—";
+            var address = user != null ? (user.Address ?? $"{user.City}, {user.State}".Trim(new[] { ' ', ',' })) : "N/A";
+            if (string.IsNullOrWhiteSpace(address)) address = "N/A";
+
+            var child = v.Request?.Child;
+            var childName = child != null ? $"{child.FirstName} {child.LastName}".Trim() : "";
+
+            return new SocialWorkerMyHomeVisitResponse(
+                v.HomeVisitId,
+                v.VisitCode,
+                v.ScheduledDate,
+                v.ScheduledTime,
+                v.ScheduledDate,
+                v.ScheduledTime,
+                parentName,
+                address,
+                v.Status,
+                v.Remarks,
+                v.RequestId,
+                v.Request?.ApplicationNumber ?? "",
+                childName
+            );
+        }).ToList();
+
+        return ApiResponse<List<SocialWorkerMyHomeVisitResponse>>.Ok(result, "Social worker home visits retrieved successfully");
+    }
 }

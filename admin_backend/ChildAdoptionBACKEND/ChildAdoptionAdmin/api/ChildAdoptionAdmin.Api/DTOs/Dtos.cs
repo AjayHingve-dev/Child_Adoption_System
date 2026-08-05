@@ -281,3 +281,19 @@ public record ApplicationDetailResponse(
     ChildResponse Child,
     List<ParentDocumentResponse> Documents,
     List<HomeVisitResponse> HomeVisits);
+
+public record SocialWorkerMyHomeVisitResponse(
+    long HomeVisitId,
+    string VisitCode,
+    DateTime VisitDate,
+    TimeSpan? VisitTime,
+    DateTime ScheduledDate,
+    TimeSpan? ScheduledTime,
+    string ParentName,
+    string Address,
+    string Status,
+    string? Remarks,
+    long RequestId,
+    string ApplicationNumber,
+    string ChildName
+);
