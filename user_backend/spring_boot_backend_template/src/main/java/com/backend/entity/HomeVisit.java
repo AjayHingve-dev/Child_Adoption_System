@@ -65,7 +65,21 @@ public class HomeVisit {
     private ConcernStatus anyConcern;
 
     @Column(columnDefinition="TEXT")
+    private String homeCondition;
+
+    @Column(columnDefinition="TEXT")
+    private String financialStatus;
+
+    @Column(columnDefinition="TEXT")
+    private String familyBackground;
+
+    @Column(columnDefinition="TEXT")
+    private String observations;
+
+    @Column(columnDefinition="TEXT")
     private String remarks;
+
+    private String recommendation;
 
     private LocalDateTime completedAt;
 

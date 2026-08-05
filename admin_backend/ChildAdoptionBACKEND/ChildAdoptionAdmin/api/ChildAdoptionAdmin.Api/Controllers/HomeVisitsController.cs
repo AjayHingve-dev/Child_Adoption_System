@@ -147,4 +147,23 @@ public class HomeVisitsController : ControllerBase
         var result = await _service.GetMyVisitsAsync(targetWorkerId, targetEmail);
         return Ok(result);
     }
+
+    // 8. Generate / Update Visit Report: PUT /api/home-visits/{visitId}/report
+    [AllowAnonymous]
+    [HttpPut("{visitId:long}/report")]
+    [ProducesResponseType(typeof(ApiResponse<HomeVisitReportResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<HomeVisitReportResponse>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse<HomeVisitReportResponse>), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> SubmitVisitReport(long visitId, [FromBody] GenerateVisitReportRequest request)
+    {
+        var result = await _service.SubmitVisitReportAsync(visitId, request);
+        if (!result.Success)
+        {
+            if (result.Message.Contains("not found", StringComparison.OrdinalIgnoreCase))
+                return NotFound(result);
+            return BadRequest(result);
+        }
+
+        return Ok(result);
+    }
 }

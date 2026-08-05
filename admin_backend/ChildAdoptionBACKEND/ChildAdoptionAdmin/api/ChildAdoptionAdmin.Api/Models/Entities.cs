@@ -117,7 +117,12 @@ public class HomeVisit
     public string? FinancialStability { get; set; }
     public string? FamilySupport { get; set; }
     public string? AnyConcern { get; set; }
+    public string? HomeCondition { get; set; }
+    public string? FinancialStatus { get; set; }
+    public string? FamilyBackground { get; set; }
+    public string? Observations { get; set; }
     public string? Remarks { get; set; }
+    public string? Recommendation { get; set; }
     public DateTime? CompletedAt { get; set; }
     public DateTime CreatedAt { get; set; }
 

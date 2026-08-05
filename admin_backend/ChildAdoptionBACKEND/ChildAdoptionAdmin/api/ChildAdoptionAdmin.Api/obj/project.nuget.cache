@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "GXoYhNEDA80=",
+  "dgSpecHash": "L+h9IMsvI+Y=",
   "success": true,
-  "projectFilePath": "D:\\cdac\\prfi\\Child_Adoption_System\\admin_backend\\ChildAdoptionBACKEND\\ChildAdoptionAdmin\\api\\ChildAdoptionAdmin.Api\\ChildAdoptionAdmin.Api.csproj",
+  "projectFilePath": "D:\\Child_Adoption_Project\\Child_Adoption_System\\admin_backend\\ChildAdoptionBACKEND\\ChildAdoptionAdmin\\api\\ChildAdoptionAdmin.Api\\ChildAdoptionAdmin.Api.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\HP\\.nuget\\packages\\bcrypt.net-next\\4.0.3\\bcrypt.net-next.4.0.3.nupkg.sha512",
     "C:\\Users\\HP\\.nuget\\packages\\humanizer.core\\2.14.1\\humanizer.core.2.14.1.nupkg.sha512",

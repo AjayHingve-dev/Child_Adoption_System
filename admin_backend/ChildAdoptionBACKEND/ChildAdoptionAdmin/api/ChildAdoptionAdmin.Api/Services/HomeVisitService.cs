@@ -255,17 +255,70 @@ public class HomeVisitService : IHomeVisitService
             visit.VisitCode,
             visit.RequestId,
             visit.SocialWorkerId,
-            HomeCondition: visit.OverallImpression ?? visit.FamilyEnvironment,
-            FamilyBackground: visit.FamilyEnvironment,
-            FinancialStability: visit.FinancialStability,
+            HomeCondition: visit.HomeCondition ?? visit.OverallImpression ?? visit.FamilyEnvironment,
+            FinancialStatus: visit.FinancialStatus ?? visit.FinancialStability,
+            FamilyBackground: visit.FamilyBackground ?? visit.FamilyEnvironment,
+            Observations: visit.Observations,
             CriminalBackground: visit.AnyConcern != null && visit.AnyConcern.ToLower().Contains("criminal") ? visit.AnyConcern : "No criminal background reported",
             ParentInteraction: visit.FamilySupport,
             ChildSafety: visit.AnyConcern ?? "Satisfactory and safe environment",
-            Recommendation: visit.Remarks ?? visit.OverallImpression ?? "Recommended for approval",
+            Recommendation: visit.Recommendation ?? visit.Remarks ?? "APPROVED",
             Remarks: visit.Remarks,
             CompletedAt: visit.CompletedAt);
 
         return ApiResponse<HomeVisitReportResponse>.Ok(report, "Home visit report retrieved successfully");
+    }
+
+    public async Task<ApiResponse<HomeVisitReportResponse>> SubmitVisitReportAsync(long visitId, GenerateVisitReportRequest request)
+    {
+        var visit = await _visitRepo.GetByIdAsync(visitId);
+        if (visit is null)
+            return ApiResponse<HomeVisitReportResponse>.Fail("Home visit not found.");
+
+        string? rec = request.Recommendation?.Trim().ToUpperInvariant();
+        if (!string.IsNullOrEmpty(rec))
+        {
+            if (rec != "APPROVED" && rec != "REJECTED" && rec != "NEED_MORE_INFORMATION")
+            {
+                return ApiResponse<HomeVisitReportResponse>.Fail("Invalid recommendation. Allowed values are: APPROVED, REJECTED, NEED_MORE_INFORMATION.");
+            }
+            visit.Recommendation = rec;
+        }
+
+        if (request.HomeCondition != null) visit.HomeCondition = request.HomeCondition.Trim();
+        if (request.FinancialStatus != null) visit.FinancialStatus = request.FinancialStatus.Trim();
+        if (request.FamilyBackground != null) visit.FamilyBackground = request.FamilyBackground.Trim();
+        if (request.Observations != null) visit.Observations = request.Observations.Trim();
+        if (request.Remarks != null) visit.Remarks = request.Remarks.Trim();
+
+        visit.Status = "COMPLETED";
+        visit.CompletedAt = DateTime.UtcNow;
+
+        if (visit.Request != null)
+        {
+            visit.Request.Status = "UNDER_REVIEW";
+            visit.Request.StatusUpdatedAt = DateTime.UtcNow;
+        }
+
+        await _visitRepo.UpdateAsync(visit);
+
+        var report = new HomeVisitReportResponse(
+            visit.HomeVisitId,
+            visit.VisitCode,
+            visit.RequestId,
+            visit.SocialWorkerId,
+            HomeCondition: visit.HomeCondition ?? visit.OverallImpression ?? visit.FamilyEnvironment,
+            FinancialStatus: visit.FinancialStatus ?? visit.FinancialStability,
+            FamilyBackground: visit.FamilyBackground ?? visit.FamilyEnvironment,
+            Observations: visit.Observations,
+            CriminalBackground: visit.AnyConcern != null && visit.AnyConcern.ToLower().Contains("criminal") ? visit.AnyConcern : "No criminal background reported",
+            ParentInteraction: visit.FamilySupport,
+            ChildSafety: visit.AnyConcern ?? "Satisfactory and safe environment",
+            Recommendation: visit.Recommendation ?? visit.Remarks ?? "APPROVED",
+            Remarks: visit.Remarks,
+            CompletedAt: visit.CompletedAt);
+
+        return ApiResponse<HomeVisitReportResponse>.Ok(report, "Visit report generated and saved successfully");
     }
 
     public async Task<ApiResponse<List<SocialWorkerMyHomeVisitResponse>>> GetMyVisitsAsync(long? socialWorkerId, string? email)
