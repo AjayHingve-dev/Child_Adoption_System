@@ -138,7 +138,12 @@ CREATE TABLE home_visits (
     financial_stability VARCHAR(20),
     family_support VARCHAR(20),
     any_concern VARCHAR(10),                          -- Yes | No
+    home_condition TEXT,
+    financial_status TEXT,
+    family_background TEXT,
+    observations TEXT,
     remarks TEXT,
+    recommendation VARCHAR(50),                       -- APPROVED | REJECTED | NEED_MORE_INFORMATION
     completed_at TIMESTAMP NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 

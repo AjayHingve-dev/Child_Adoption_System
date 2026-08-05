@@ -11,5 +11,6 @@ public interface IHomeVisitService
     Task<ApiResponse<HomeVisitResponse>> UpdateVisitAsync(long id, AdminUpdateHomeVisitRequest request);
     Task<ApiResponse<HomeVisitResponse>> CancelVisitAsync(long id);
     Task<ApiResponse<HomeVisitReportResponse>> GetReportAsync(long id);
+    Task<ApiResponse<HomeVisitReportResponse>> SubmitVisitReportAsync(long visitId, GenerateVisitReportRequest request);
     Task<ApiResponse<List<SocialWorkerMyHomeVisitResponse>>> GetMyVisitsAsync(long? socialWorkerId, string? email);
 }

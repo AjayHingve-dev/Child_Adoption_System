@@ -18,6 +18,12 @@ import com.backend.repository.UserRepository;
 
 import lombok.RequiredArgsConstructor;
 
+import java.time.LocalDateTime;
+
+import com.backend.dto.VisitReportRequestDto;
+import com.backend.dto.VisitReportResponseDto;
+import com.backend.entity.HomeVisitStatus;
+
 @Service
 @Transactional(readOnly = true)
 @RequiredArgsConstructor
@@ -25,6 +31,49 @@ public class HomeVisitServiceImpl implements HomeVisitService {
 
     private final HomeVisitRepository homeVisitRepository;
     private final UserRepository userRepository;
+
+    @Override
+    @Transactional
+    public VisitReportResponseDto submitVisitReport(Long visitId, VisitReportRequestDto requestDto) {
+        HomeVisit visit = homeVisitRepository.findById(visitId)
+                .orElseThrow(() -> new RuntimeException("Home visit not found with id: " + visitId));
+
+        if (requestDto.getRecommendation() != null && !requestDto.getRecommendation().trim().isEmpty()) {
+            String rec = requestDto.getRecommendation().trim().toUpperCase();
+            if (!rec.equals("APPROVED") && !rec.equals("REJECTED") && !rec.equals("NEED_MORE_INFORMATION")) {
+                throw new IllegalArgumentException("Invalid recommendation. Allowed values are: APPROVED, REJECTED, NEED_MORE_INFORMATION.");
+            }
+            visit.setRecommendation(rec);
+        }
+
+        if (requestDto.getHomeCondition() != null) visit.setHomeCondition(requestDto.getHomeCondition().trim());
+        if (requestDto.getFinancialStatus() != null) visit.setFinancialStatus(requestDto.getFinancialStatus().trim());
+        if (requestDto.getFamilyBackground() != null) visit.setFamilyBackground(requestDto.getFamilyBackground().trim());
+        if (requestDto.getObservations() != null) visit.setObservations(requestDto.getObservations().trim());
+        if (requestDto.getRemarks() != null) visit.setRemarks(requestDto.getRemarks().trim());
+
+        visit.setStatus(HomeVisitStatus.COMPLETED);
+        visit.setCompletedAt(LocalDateTime.now());
+
+        HomeVisit saved = homeVisitRepository.save(visit);
+
+        Long reqId = saved.getRequest() != null ? saved.getRequest().getRequestId() : null;
+        Long workerId = saved.getSocialWorker() != null ? saved.getSocialWorker().getSocialWorkerId() : null;
+
+        return VisitReportResponseDto.builder()
+                .homeVisitId(saved.getHomeVisitId())
+                .visitCode(saved.getVisitCode())
+                .requestId(reqId)
+                .socialWorkerId(workerId)
+                .homeCondition(saved.getHomeCondition())
+                .financialStatus(saved.getFinancialStatus())
+                .familyBackground(saved.getFamilyBackground())
+                .observations(saved.getObservations())
+                .remarks(saved.getRemarks())
+                .recommendation(saved.getRecommendation())
+                .completedAt(saved.getCompletedAt())
+                .build();
+    }
 
     @Override
     public List<ParentHomeVisitDto> getMyHomeVisits(Long userId, String email) {

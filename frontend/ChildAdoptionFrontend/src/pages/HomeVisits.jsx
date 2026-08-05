@@ -34,12 +34,12 @@ const emptyForm = {
   notes: "",
 };
 const emptyReport = {
-  overallImpression: "",
-  familyEnvironment: "",
-  financialStability: "",
-  familySupport: "",
-  anyConcern: "",
+  homeCondition: "",
+  financialStatus: "",
+  familyBackground: "",
+  observations: "",
   remarks: "",
+  recommendation: "APPROVED",
 };
 const today = () => new Date().toISOString().slice(0, 10);
 const timeText = (value) => (value ? String(value).slice(0, 5) : "Not set");
@@ -176,12 +176,12 @@ export default function HomeVisits() {
       const { data } = await api.get(`/home-visits/${row.homeVisitId}`);
       setCompleteVisit(data);
       setReport({
-        overallImpression: data.overallImpression || "",
-        familyEnvironment: data.familyEnvironment || "",
-        financialStability: data.financialStability || "",
-        familySupport: data.familySupport || "",
-        anyConcern: data.anyConcern || "",
+        homeCondition: data.homeCondition || data.overallImpression || "",
+        financialStatus: data.financialStatus || data.financialStability || "",
+        familyBackground: data.familyBackground || data.familyEnvironment || "",
+        observations: data.observations || "",
         remarks: data.remarks || "",
+        recommendation: data.recommendation || "APPROVED",
       });
     } catch (e) {
       setToast({ type: "error", message: errorMessage(e) });
@@ -192,11 +192,11 @@ export default function HomeVisits() {
     setSaving(true);
     try {
       await api.put(
-        `/home-visits/${completeVisit.homeVisitId}/complete`,
+        `/home-visits/${completeVisit.homeVisitId}/report`,
         report,
       );
       setToast({
-        message: "Home visit completed and application moved under review.",
+        message: "Visit report submitted and visit completed successfully.",
       });
       setCompleteVisit(null);
       setReport(emptyReport);
@@ -515,81 +515,71 @@ export default function HomeVisits() {
               <b>UNDER REVIEW</b>.
             </div>
             <div className="form-grid">
-              <SelectField
-                label="Overall impression"
-                value={report.overallImpression}
+              <Field
+                label="Home Condition"
+                placeholder="e.g. Clean, spacious, and safe environment"
+                value={report.homeCondition}
                 onChange={(e) =>
-                  setReport({ ...report, overallImpression: e.target.value })
+                  setReport({ ...report, homeCondition: e.target.value })
                 }
                 required
-              >
-                <option value="">Select</option>
-                <option>Good</option>
-                <option>Average</option>
-                <option>Poor</option>
-              </SelectField>
-              <SelectField
-                label="Family environment"
-                value={report.familyEnvironment}
+              />
+              <Field
+                label="Financial Status"
+                placeholder="e.g. Stable, income adequate for family"
+                value={report.financialStatus}
                 onChange={(e) =>
-                  setReport({ ...report, familyEnvironment: e.target.value })
+                  setReport({ ...report, financialStatus: e.target.value })
                 }
                 required
-              >
-                <option value="">Select</option>
-                <option>Good</option>
-                <option>Average</option>
-                <option>Poor</option>
-              </SelectField>
-              <SelectField
-                label="Financial stability"
-                value={report.financialStability}
-                onChange={(e) =>
-                  setReport({ ...report, financialStability: e.target.value })
-                }
-                required
-              >
-                <option value="">Select</option>
-                <option>Stable</option>
-                <option>Moderate</option>
-                <option>Unstable</option>
-              </SelectField>
-              <SelectField
-                label="Family support"
-                value={report.familySupport}
-                onChange={(e) =>
-                  setReport({ ...report, familySupport: e.target.value })
-                }
-                required
-              >
-                <option value="">Select</option>
-                <option>Strong</option>
-                <option>Moderate</option>
-                <option>Weak</option>
-              </SelectField>
-              <SelectField
-                label="Any child-safety concern?"
-                value={report.anyConcern}
-                onChange={(e) =>
-                  setReport({ ...report, anyConcern: e.target.value })
-                }
-                required
-              >
-                <option value="">Select</option>
-                <option>No</option>
-                <option>Yes</option>
-              </SelectField>
+              />
               <div className="full">
                 <TextareaField
-                  label="Recommendation / remarks"
-                  rows="4"
-                  value={report.remarks}
+                  label="Family Background"
+                  placeholder="Details about family structure, history, and dynamics"
+                  rows="2"
+                  value={report.familyBackground}
                   onChange={(e) =>
-                    setReport({ ...report, remarks: e.target.value })
+                    setReport({ ...report, familyBackground: e.target.value })
                   }
                   required
                 />
               </div>
+              <div className="full">
+                <TextareaField
+                  label="Observations"
+                  placeholder="Key observations made during the visit"
+                  rows="3"
+                  value={report.observations}
+                  onChange={(e) =>
+                    setReport({ ...report, observations: e.target.value })
+                  }
+                  required
+                />
+              </div>
+              <div className="full">
+                <TextareaField
+                  label="Remarks"
+                  placeholder="Additional remarks or notes"
+                  rows="2"
+                  value={report.remarks}
+                  onChange={(e) =>
+                    setReport({ ...report, remarks: e.target.value })
+                  }
+                />
+              </div>
+              <SelectField
+                label="Recommendation"
+                value={report.recommendation}
+                onChange={(e) =>
+                  setReport({ ...report, recommendation: e.target.value })
+                }
+                required
+              >
+                <option value="APPROVED">APPROVED</option>
+                <option value="REJECTED">REJECTED</option>
+                <option value="NEED_MORE_INFORMATION">NEED_MORE_INFORMATION</option>
+              </SelectField>
             </div>
             <div className="modal-actions">
               <Button

@@ -210,14 +210,23 @@ public record HomeVisitDetailResponse(
     DateTime? CompletedAt,
     DateTime CreatedAt);
 
+public record GenerateVisitReportRequest(
+    string? HomeCondition,
+    string? FinancialStatus,
+    string? FamilyBackground,
+    string? Observations,
+    string? Remarks,
+    string? Recommendation);
+
 public record HomeVisitReportResponse(
     long HomeVisitId,
     string VisitCode,
     long RequestId,
     long SocialWorkerId,
     string? HomeCondition,
+    string? FinancialStatus,
     string? FamilyBackground,
-    string? FinancialStability,
+    string? Observations,
     string? CriminalBackground,
     string? ParentInteraction,
     string? ChildSafety,

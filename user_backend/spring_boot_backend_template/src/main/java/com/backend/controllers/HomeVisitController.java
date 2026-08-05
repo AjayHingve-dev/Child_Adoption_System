@@ -66,4 +66,13 @@ public class HomeVisitController {
             return ResponseEntity.ok(ApiResponse.ok(visits, "Parent home visits retrieved successfully"));
         }
     }
+
+    // PUT /api/home-visits/{visitId}/report
+    @org.springframework.web.bind.annotation.PutMapping("/{visitId}/report")
+    public ResponseEntity<ApiResponse<com.backend.dto.VisitReportResponseDto>> submitVisitReport(
+            @org.springframework.web.bind.annotation.PathVariable Long visitId,
+            @org.springframework.web.bind.annotation.RequestBody com.backend.dto.VisitReportRequestDto requestDto) {
+        com.backend.dto.VisitReportResponseDto report = homeVisitService.submitVisitReport(visitId, requestDto);
+        return ResponseEntity.ok(ApiResponse.ok(report, "Visit report submitted successfully"));
+    }
 }
